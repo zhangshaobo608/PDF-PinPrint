@@ -2,6 +2,8 @@
 
 一个轻量的原生 macOS PDF 预览与拼版打印工具，解决系统打印面板无法选择每张纸打印 3、5 等奇数页的问题。
 
+[隐私政策](PRIVACY.md) · [使用支持](SUPPORT.md)
+
 ## 功能
 
 - 一次选择或拖入多个 PDF，查看全部原页与打印预览
@@ -36,6 +38,12 @@ bash build.sh
 ```
 
 构建结果位于 `dist/`。生成的 App 使用本机临时签名，适合本地使用；对外分发需要 Apple Developer ID 签名与公证。
+
+## Mac App Store 构建
+
+仓库包含 `PDFPinPrint.xcodeproj` 和应用沙盒配置。使用 Xcode 打开工程，在 Signing & Capabilities 中选择自己的开发团队，然后执行 Product > Archive。发布目标使用 Bundle ID `com.songningning.pdfpinprint`。
+
+沙盒仅申请用户所选文件的读写权限与打印权限，PDF 内容仍完全在本机处理。
 
 ## 技术实现
 
