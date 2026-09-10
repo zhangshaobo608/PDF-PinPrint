@@ -1,6 +1,14 @@
 import AppKit
 import PDFKit
 
+struct PDFSource {
+    let data: Data
+    let password: String?
+    let name: String
+    let pageCount: Int
+    let allowsPrinting: Bool
+}
+
 struct PrintSettings {
     var pagesPerSheet = 3
     var paperIndex = 0
@@ -69,14 +77,16 @@ enum Imposition {
         return abs(page.rotation % 180) == 90 ? CGSize(width: size.height, height: size.width) : size
     }
 
-    static func grid(document: PDFDocument, settings: PrintSettings) -> (Int, Int) {
+    static func grid(pages: [PDFPage], settings: PrintSettings) -> (Int, Int) {
         let n = settings.pagesPerSheet
         if settings.arrangement == 1 { return (1, n) }
         if settings.arrangement == 2 { return (n, 1) }
         let gap: CGFloat = 8.503937 // 3 mm
         let width = settings.paperSize.width - 2 * settings.margin
         let height = settings.paperSize.height - 2 * settings.margin
-        let sample = settings.pageIndices.prefix(32).compactMap { document.page(at: $0) }.map(displaySize)
+        let sample = settings.pageIndices.prefix(32).compactMap { index in
+            pages.indices.contains(index) ? pages[index] : nil
+        }.map(displaySize)
         var best = (1, n)
         var bestScore: CGFloat = -1
         // Compare readable page area, allowing an unused cell for odd page counts.
@@ -97,14 +107,28 @@ enum Imposition {
         return best
     }
 
-    static func compose(source: Data, password: String?, settings: PrintSettings,
+    static func compose(sources: [PDFSource], settings: PrintSettings,
                         cancelled: () -> Bool) throws -> ImpositionResult? {
-        guard let document = PDFDocument(data: source) else { throw LayoutError.message("无法读取 PDF。") }
-        if document.isLocked, !document.unlock(withPassword: password ?? "") {
-            throw LayoutError.message("PDF 密码不正确。")
+        var pages: [PDFPage] = []
+        for source in sources {
+            if cancelled() { return nil }
+            guard let document = PDFDocument(data: source.data) else {
+                throw LayoutError.message("无法读取“\(source.name)”。")
+            }
+            if document.isLocked, !document.unlock(withPassword: source.password ?? "") {
+                throw LayoutError.message("“\(source.name)”的密码不正确。")
+            }
+            guard document.allowsPrinting else {
+                throw LayoutError.message("“\(source.name)”的权限不允许打印。")
+            }
+            for pageIndex in 0..<document.pageCount {
+                guard let page = document.page(at: pageIndex) else {
+                    throw LayoutError.message("无法读取“\(source.name)”的第 \(pageIndex + 1) 页。")
+                }
+                pages.append(page)
+            }
         }
-        guard document.allowsPrinting else { throw LayoutError.message("此 PDF 的权限不允许打印。") }
-        let (columns, rows) = grid(document: document, settings: settings)
+        let (columns, rows) = grid(pages: pages, settings: settings)
         let gap: CGFloat = 8.503937
         let paper = settings.paperSize
         let cellW = (paper.width - 2 * settings.margin - CGFloat(columns - 1) * gap) / CGFloat(columns)
@@ -127,9 +151,11 @@ enum Imposition {
                 if cancelled() { context.endPDFPage(); context.closePDF(); return nil }
                 let offset = sheet * settings.pagesPerSheet + slot
                 if offset >= settings.pageIndices.count { break }
-                guard let page = document.page(at: settings.pageIndices[offset]) else {
+                let sourcePageIndex = settings.pageIndices[offset]
+                guard pages.indices.contains(sourcePageIndex) else {
                     throw LayoutError.message("无法读取第 \(settings.pageIndices[offset] + 1) 页。")
                 }
+                let page = pages[sourcePageIndex]
                 let size = displaySize(page)
                 guard size.width > 0, size.height > 0 else {
                     throw LayoutError.message("第 \(settings.pageIndices[offset] + 1) 页尺寸无效。")

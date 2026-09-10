@@ -3,7 +3,7 @@ import PDFKit
 import UniformTypeIdentifiers
 
 final class DropView: NSView {
-    var onDrop: ((URL) -> Void)?
+    var onDrop: (([URL]) -> Void)?
     override init(frame: NSRect) {
         super.init(frame: frame)
         registerForDraggedTypes([.fileURL])
@@ -12,8 +12,10 @@ final class DropView: NSView {
     override func draggingEntered(_ sender: NSDraggingInfo) -> NSDragOperation { .copy }
     override func performDragOperation(_ sender: NSDraggingInfo) -> Bool {
         guard let urls = sender.draggingPasteboard.readObjects(forClasses: [NSURL.self],
-            options: [.urlReadingFileURLsOnly: true]) as? [URL], let url = urls.first else { return false }
-        onDrop?(url)
+            options: [.urlReadingFileURLsOnly: true]) as? [URL] else { return false }
+        let pdfURLs = urls.filter { $0.pathExtension.lowercased() == "pdf" }
+        guard !pdfURLs.isEmpty else { return false }
+        onDrop?(pdfURLs)
         return true
     }
 }
@@ -43,16 +45,15 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSTextFieldDelegate, N
     let exportButton = NSButton(title: "另存拼版 PDF…", target: nil, action: nil)
     let spinner = NSProgressIndicator()
     var sourceDocument: PDFDocument?
-    var sourceData: Data?
-    var sourceURL: URL?
-    var sourcePassword: String?
+    var sourceItems: [PDFSource] = []
+    var sourceURLs: [URL] = []
     var outputDocument: PDFDocument?
     var outputData: Data?
     var outputSettings: PrintSettings?
     var revision = 0
     let renderQueue = OperationQueue()
     var pendingRender: DispatchWorkItem?
-    var pendingOpenURL: URL?
+    var pendingOpenURLs: [URL] = []
     var controls: [NSControl] = []
 
     func applicationDidFinishLaunching(_ notification: Notification) {
@@ -69,17 +70,17 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSTextFieldDelegate, N
         makeWindow()
         window.makeKeyAndOrderFront(nil)
         NSApp.activate(ignoringOtherApps: true)
-        if let url = pendingOpenURL { openPDF(url) }
-        else if let path = CommandLine.arguments.dropFirst().first(where: { $0.lowercased().hasSuffix(".pdf") }) {
-            openPDF(URL(fileURLWithPath: path))
-        }
+        let argumentURLs = CommandLine.arguments.dropFirst()
+            .filter { $0.lowercased().hasSuffix(".pdf") }
+            .map { URL(fileURLWithPath: $0) }
+        let initialURLs = pendingOpenURLs + argumentURLs
+        if !initialURLs.isEmpty { openPDFs(initialURLs) }
     }
 
     func application(_ sender: NSApplication, openFiles filenames: [String]) {
-        if let path = filenames.first {
-            let url = URL(fileURLWithPath: path)
-            if window == nil { pendingOpenURL = url } else { openPDF(url) }
-        }
+        let urls = filenames.filter { $0.lowercased().hasSuffix(".pdf") }.map { URL(fileURLWithPath: $0) }
+        if window == nil { pendingOpenURLs.append(contentsOf: urls) }
+        else if !urls.isEmpty { openPDFs(urls) }
         sender.reply(toOpenOrPrint: .success)
     }
     func applicationShouldTerminateAfterLastWindowClosed(_ sender: NSApplication) -> Bool { true }
@@ -97,7 +98,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSTextFieldDelegate, N
         menu.addItem(appItem)
         let fileItem = NSMenuItem()
         let fileMenu = NSMenu(title: "文件")
-        for (title, action, key) in [("打开 PDF…", #selector(openPanel), "o"),
+        for (title, action, key) in [("选择 PDF…", #selector(openPanel), "o"),
                                      ("另存拼版 PDF…", #selector(exportPDF), "s"),
                                      ("打印…", #selector(printPDF), "p")] {
             let item = fileMenu.addItem(withTitle: title, action: action, keyEquivalent: key)
@@ -155,7 +156,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSTextFieldDelegate, N
         window.minSize = NSSize(width: 850, height: 760)
         window.center()
         let root = DropView()
-        root.onDrop = { [weak self] url in self?.openPDF(url) }
+        root.onDrop = { [weak self] urls in self?.openPDFs(urls) }
         window.contentView = root
         let sidebar = NSVisualEffectView()
         sidebar.material = .sidebar
@@ -177,7 +178,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSTextFieldDelegate, N
         sourceTitle.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
         sourceDetail.font = .systemFont(ofSize: 11)
         sourceDetail.textColor = .secondaryLabelColor
-        let open = button("打开 PDF…", #selector(openPanel))
+        let open = button("选择多个 PDF…", #selector(openPanel))
         open.image = NSImage(systemSymbolName: "folder", accessibilityDescription: nil)
         open.imagePosition = .imageLeading
         let title = label("PDF拼印", size: 23, weight: .bold)
@@ -206,7 +207,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSTextFieldDelegate, N
         margins.addItems(withTitles: ["标准 · 10 mm", "窄 · 5 mm", "宽 · 15 mm"])
         rangeField.placeholderString = "全部，或 1-6, 8"
         rangeField.delegate = self
-        rangeField.setAccessibilityLabel("原 PDF 页码范围")
+        rangeField.setAccessibilityLabel("合并顺序中的页码范围")
         borderCheckbox.toolTip = "沿每个 PDF 页面边缘添加细边框，预览、打印及导出均生效。"
         for control in [paperPopup, orientation, arrangement, margins, borderCheckbox] as [NSControl] {
             control.target = self; control.action = #selector(settingsChanged)
@@ -218,7 +219,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSTextFieldDelegate, N
         countGroup.orientation = .vertical; countGroup.alignment = .leading; countGroup.spacing = 7
         let stack = NSStackView(views: [title, subtitle, open, sourceTitle, sourceDetail, countGroup,
             section("纸张", paperPopup), section("纸张方向", orientation),
-            section("页内排列", arrangement), section("边距", margins), borderCheckbox, section("原 PDF 页码", rangeField)])
+            section("页内排列", arrangement), section("边距", margins), borderCheckbox, section("打印页码（合并顺序）", rangeField)])
         stack.orientation = .vertical; stack.alignment = .leading; stack.spacing = 12
         stack.setCustomSpacing(19, after: subtitle)
         stack.setCustomSpacing(3, after: sourceTitle)
@@ -293,9 +294,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSTextFieldDelegate, N
         icon.contentTintColor = .controlAccentColor
         icon.symbolConfiguration = NSImage.SymbolConfiguration(pointSize: 48, weight: .light)
         let emptyTitle = label("三页一张，也可以。", size: 25, weight: .semibold)
-        let emptyText = label("打开或拖入 PDF，设置页数，然后打印。", size: 13, weight: .regular)
+        let emptyText = label("选择或拖入多个 PDF，按顺序拼版打印。", size: 13, weight: .regular)
         emptyText.textColor = .secondaryLabelColor
-        emptyView.setViews([icon, emptyTitle, emptyText, button("打开 PDF…", #selector(openPanel))], in: .center)
+        emptyView.setViews([icon, emptyTitle, emptyText, button("选择多个 PDF…", #selector(openPanel))], in: .center)
         emptyView.orientation = .vertical; emptyView.spacing = 18; emptyView.translatesAutoresizingMaskIntoConstraints = false
         right.addSubview(emptyView)
         NSLayoutConstraint.activate([emptyView.centerXAnchor.constraint(equalTo: right.centerXAnchor),
@@ -307,9 +308,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSTextFieldDelegate, N
     @objc func openPanel() {
         let panel = NSOpenPanel()
         panel.allowedContentTypes = [.pdf]
-        panel.allowsMultipleSelection = false
+        panel.allowsMultipleSelection = true
+        panel.message = "可选择多个 PDF，应用会按文件名顺序连续拼版。"
         panel.beginSheetModal(for: window) { [weak self] response in
-            if response == .OK, let url = panel.url { self?.openPDF(url) }
+            if response == .OK, !panel.urls.isEmpty { self?.openPDFs(panel.urls) }
         }
     }
     func showError(_ message: String) {
@@ -317,29 +319,59 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSTextFieldDelegate, N
         alert.addButton(withTitle: "好")
         alert.beginSheetModal(for: window)
     }
-    func openPDF(_ url: URL) {
+    func openPDFs(_ urls: [URL]) {
         do {
-            let data = try Data(contentsOf: url, options: .mappedIfSafe)
-            guard let document = PDFDocument(data: data) else { throw LayoutError.message("这个文件不是可读取的 PDF。") }
-            var password: String?
-            if document.isLocked {
-                let alert = NSAlert(); alert.messageText = "输入 PDF 密码"; alert.informativeText = url.lastPathComponent
-                let field = NSSecureTextField(frame: NSRect(x: 0, y: 0, width: 260, height: 24))
-                alert.accessoryView = field; alert.addButton(withTitle: "打开"); alert.addButton(withTitle: "取消")
-                alert.window.initialFirstResponder = field
-                guard alert.runModal() == .alertFirstButtonReturn else { return }
-                password = field.stringValue
-                guard document.unlock(withPassword: password!) else { throw LayoutError.message("密码不正确，请重新打开文件。") }
+            let orderedURLs = Array(Set(urls.map(\.standardizedFileURL))).sorted {
+                $0.lastPathComponent.localizedStandardCompare($1.lastPathComponent) == .orderedAscending
             }
-            guard document.pageCount > 0 else { throw LayoutError.message("PDF 中没有页面。") }
-            sourceData = data; sourceDocument = document; sourceURL = url; sourcePassword = password
-            sourceTitle.stringValue = url.lastPathComponent; sourceTitle.toolTip = url.path
-            sourceDetail.stringValue = "共 \(document.pageCount) 页 · 本地处理"
-            window.title = "\(url.lastPathComponent) — PDF拼印"
-            window.representedURL = url
+            guard !orderedURLs.isEmpty else { return }
+            var items: [PDFSource] = []
+            let previewDocument = PDFDocument()
+            for url in orderedURLs {
+                let data = try Data(contentsOf: url, options: .mappedIfSafe)
+                guard let document = PDFDocument(data: data) else {
+                    throw LayoutError.message("“\(url.lastPathComponent)”不是可读取的 PDF。")
+                }
+                var password: String?
+                if document.isLocked {
+                    let alert = NSAlert(); alert.messageText = "输入 PDF 密码"; alert.informativeText = url.lastPathComponent
+                    let field = NSSecureTextField(frame: NSRect(x: 0, y: 0, width: 260, height: 24))
+                    alert.accessoryView = field; alert.addButton(withTitle: "打开"); alert.addButton(withTitle: "取消")
+                    alert.window.initialFirstResponder = field
+                    guard alert.runModal() == .alertFirstButtonReturn else { return }
+                    password = field.stringValue
+                    guard document.unlock(withPassword: password!) else {
+                        throw LayoutError.message("“\(url.lastPathComponent)”的密码不正确。")
+                    }
+                }
+                guard document.pageCount > 0 else {
+                    throw LayoutError.message("“\(url.lastPathComponent)”中没有页面。")
+                }
+                items.append(PDFSource(data: data, password: password, name: url.lastPathComponent,
+                                       pageCount: document.pageCount, allowsPrinting: document.allowsPrinting))
+                for pageIndex in 0..<document.pageCount {
+                    guard let page = document.page(at: pageIndex), let copy = page.copy() as? PDFPage else {
+                        throw LayoutError.message("无法读取“\(url.lastPathComponent)”的第 \(pageIndex + 1) 页。")
+                    }
+                    previewDocument.insert(copy, at: previewDocument.pageCount)
+                }
+            }
+            sourceItems = items; sourceDocument = previewDocument; sourceURLs = orderedURLs
+            if items.count == 1 {
+                sourceTitle.stringValue = items[0].name
+                sourceDetail.stringValue = "共 \(previewDocument.pageCount) 页 · 本地处理"
+                window.title = "\(items[0].name) — PDF拼印"
+                window.representedURL = orderedURLs[0]
+            } else {
+                sourceTitle.stringValue = "已选择 \(items.count) 个 PDF"
+                sourceDetail.stringValue = "共 \(previewDocument.pageCount) 页 · 按文件名顺序 · 本地处理"
+                window.title = "\(items.count) 个 PDF — PDF拼印"
+                window.representedURL = nil
+            }
+            sourceTitle.toolTip = orderedURLs.map(\.path).joined(separator: "\n")
             rangeField.stringValue = ""
             emptyView.isHidden = true
-            pdfView.document = document
+            pdfView.document = previewDocument
             mode.selectedSegment = 1
             regenerate()
         } catch { showError(error.localizedDescription) }
@@ -378,27 +410,28 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSTextFieldDelegate, N
     func regenerate() {
         pendingRender?.cancel()
         invalidateOutput()
-        guard let source = sourceData else { return }
+        guard !sourceItems.isEmpty else { return }
         let settings: PrintSettings
         do { settings = try readSettings() }
         catch {
             spinner.stopAnimation(nil); summary.stringValue = "请检查打印设置"
             detail.stringValue = error.localizedDescription; status.stringValue = ""; return
         }
-        guard sourceDocument?.allowsPrinting == true else {
-            spinner.stopAnimation(nil); summary.stringValue = "此 PDF 不允许打印"
-            detail.stringValue = "文档设置了打印权限限制，仍可查看原 PDF。"
+        guard sourceItems.allSatisfy(\.allowsPrinting) else {
+            spinner.stopAnimation(nil); summary.stringValue = "部分 PDF 不允许打印"
+            let names = sourceItems.filter { !$0.allowsPrinting }.map(\.name).joined(separator: "、")
+            detail.stringValue = "以下文档设置了打印权限限制：\(names)"
             mode.selectedSegment = 0; changeMode(); return
         }
         let currentRevision = revision
-        let password = sourcePassword
+        let sources = sourceItems
         summary.stringValue = "正在生成打印预览…"; detail.stringValue = ""; status.stringValue = ""
         spinner.startAnimation(nil)
         let operation = BlockOperation()
         operation.addExecutionBlock { [weak self, weak operation] in
             guard let operation = operation, !operation.isCancelled else { return }
             do {
-                let result = try Imposition.compose(source: source, password: password, settings: settings,
+                let result = try Imposition.compose(sources: sources, settings: settings,
                                                      cancelled: { operation.isCancelled })
                 guard let result = result, !operation.isCancelled else { return }
                 DispatchQueue.main.async {
@@ -406,7 +439,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSTextFieldDelegate, N
                     self.spinner.stopAnimation(nil)
                     guard let output = PDFDocument(data: result.data) else { self.showError("无法打开生成的打印预览。"); return }
                     self.outputData = result.data; self.outputDocument = output; self.outputSettings = settings
-                    self.summary.stringValue = "\(settings.pageIndices.count) 页 PDF → \(result.sheetCount) 个打印面"
+                    let sourceSummary = self.sourceItems.count == 1 ? "1 个 PDF" : "\(self.sourceItems.count) 个 PDF"
+                    self.summary.stringValue = "\(sourceSummary) · \(settings.pageIndices.count) 页 → \(result.sheetCount) 个打印面"
                     self.detail.stringValue = "\(settings.paperName) · \(settings.landscape ? "横向" : "纵向") · 每面 \(settings.pagesPerSheet) 页 · \(result.rows) 行 × \(result.columns) 列"
                     self.status.stringValue = "单面打印用 \(result.sheetCount) 张纸；双面选项在系统打印窗口中设置。"
                     self.changeMode(); self.updateAvailability()
@@ -447,11 +481,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSTextFieldDelegate, N
     @objc func exportPDF() {
         guard let data = outputData, let settings = outputSettings else { return }
         let panel = NSSavePanel(); panel.allowedContentTypes = [.pdf]
-        let name = sourceURL?.deletingPathExtension().lastPathComponent ?? "文档"
+        let name = sourceURLs.count == 1 ? sourceURLs[0].deletingPathExtension().lastPathComponent : "多个PDF"
         panel.nameFieldStringValue = "\(name)-每面\(settings.pagesPerSheet)页.pdf"
         panel.beginSheetModal(for: window) { [weak self] response in
             guard response == .OK, let url = panel.url else { return }
-            if url.standardizedFileURL == self?.sourceURL?.standardizedFileURL {
+            if self?.sourceURLs.contains(where: { $0.standardizedFileURL == url.standardizedFileURL }) == true {
                 self?.showError("请选择其他文件名，以保留原 PDF。"); return
             }
             do { try data.write(to: url, options: .atomic); self?.status.stringValue = "已保存：\(url.lastPathComponent)" }
@@ -473,7 +507,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSTextFieldDelegate, N
         guard let operation = document.printOperation(for: info, scalingMode: .pageScaleToFit, autoRotate: false) else {
             showError("无法创建打印任务，请检查打印机设置。"); return
         }
-        operation.jobTitle = "\(sourceURL?.deletingPathExtension().lastPathComponent ?? "PDF") · 每面\(settings.pagesPerSheet)页"
+        let jobName = sourceURLs.count == 1 ? sourceURLs[0].deletingPathExtension().lastPathComponent : "\(sourceURLs.count)个PDF"
+        operation.jobTitle = "\(jobName) · 每面\(settings.pagesPerSheet)页"
         operation.showsPrintPanel = true
         operation.showsProgressPanel = true
         operation.printPanel.options = [.showsCopies, .showsPageRange, .showsPaperSize, .showsOrientation, .showsPreview]
