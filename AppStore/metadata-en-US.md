@@ -48,7 +48,7 @@ Workflow:
 
 ## Keywords
 
-PDF,merge,print,impose,n-up,multipage,3-up,5-up,batch,preview,documents,combine,layout,odd-pages
+impose,n-up,multipage,3-up,5-up,batch,preview,documents,combine,layout,odd-pages,reader,offline,sort
 
 ## URLs
 
