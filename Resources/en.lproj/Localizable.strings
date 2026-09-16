@@ -14,7 +14,7 @@
 "queue.ready" = "%ld pages · ready";
 "queue.print_restricted" = "%ld pages · print restricted";
 "queue.add_more" = "Add more";
-"queue.reorder_hint" = "Use arrows to reorder";
+"queue.reorder_hint" = "Drag to reorder · Delete to remove";
 "queue.move_up" = "Move PDF up";
 "queue.move_down" = "Move PDF down";
 "queue.remove" = "Remove PDF";
@@ -89,7 +89,7 @@
 "summary.one_pdf" = "1 PDF";
 "summary.multiple_pdfs" = "%ld PDFs";
 "summary.result" = "%@ · %ld pages → %ld print sheets";
-"detail.result" = "%@ · %@ · %ld pages per sheet · %ld rows × %ld columns";
+"detail.result" = "%@ · %@ · %ld pages per sheet · Rows: %ld × Columns: %ld";
 "status.print_sheets" = "Single-sided printing uses %ld sheets; choose duplex options in the system print dialog.";
 "status.saved" = "Saved: %@";
 
@@ -110,3 +110,25 @@
 "menu.copy" = "Copy";
 "menu.paste" = "Paste";
 "menu.select_all" = "Select All";
+
+"queue.summary" = "Files: %ld · Pages: %ld";
+"queue.toggle" = "Expand or collapse file list";
+"queue.collapsed" = "Collapsed";
+"queue.expanded" = "Expanded";
+"group.layout" = "Layout";
+"group.paper" = "Paper & Borders";
+"group.range" = "Print Range";
+"menu.view" = "View";
+"menu.window" = "Window";
+"menu.minimize" = "Minimize";
+"menu.zoom" = "Zoom";
+"menu.close" = "Close Window";
+"toolbar.sidebar" = "Show or Hide Sidebar";
+"toolbar.add" = "Add PDFs…";
+"toolbar.mode" = "Preview Mode";
+"toolbar.zoom_in" = "Zoom In";
+"toolbar.zoom_out" = "Zoom Out";
+"toolbar.export" = "Export PDF…";
+"preview.thumbnails" = "Page Thumbnails";
+"preview.previous" = "Previous preview · check settings";
+"preview.page" = "Page %ld of %ld";

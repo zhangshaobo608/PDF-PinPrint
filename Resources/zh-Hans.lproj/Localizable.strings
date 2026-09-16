@@ -14,7 +14,7 @@
 "queue.ready" = "%ld 页 · 可打印";
 "queue.print_restricted" = "%ld 页 · 有打印限制";
 "queue.add_more" = "继续添加";
-"queue.reorder_hint" = "用箭头调整顺序";
+"queue.reorder_hint" = "拖动排序 · Delete 移除";
 "queue.move_up" = "上移 PDF";
 "queue.move_down" = "下移 PDF";
 "queue.remove" = "移除 PDF";
@@ -110,3 +110,25 @@
 "menu.copy" = "复制";
 "menu.paste" = "粘贴";
 "menu.select_all" = "全选";
+
+"queue.summary" = "%ld 个 · %ld 页";
+"queue.toggle" = "展开或折叠文件列表";
+"queue.collapsed" = "已折叠";
+"queue.expanded" = "已展开";
+"group.layout" = "排版";
+"group.paper" = "纸张与边框";
+"group.range" = "打印范围";
+"menu.view" = "显示";
+"menu.window" = "窗口";
+"menu.minimize" = "最小化";
+"menu.zoom" = "缩放";
+"menu.close" = "关闭窗口";
+"toolbar.sidebar" = "显示或隐藏侧栏";
+"toolbar.add" = "添加 PDF…";
+"toolbar.mode" = "预览模式";
+"toolbar.zoom_in" = "放大";
+"toolbar.zoom_out" = "缩小";
+"toolbar.export" = "导出 PDF…";
+"preview.thumbnails" = "页面缩略图";
+"preview.previous" = "显示上次有效预览，请检查设置";
+"preview.page" = "第 %ld 页，共 %ld 页";
