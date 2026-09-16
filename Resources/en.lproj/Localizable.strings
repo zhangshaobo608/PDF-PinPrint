@@ -53,13 +53,13 @@
 "accessibility.pages_per_sheet" = "PDF pages per sheet";
 "accessibility.page_range" = "Page range in merged order";
 "section.paper" = "Paper";
-"section.orientation" = "Paper Orientation";
-"section.arrangement" = "Page Arrangement";
+"section.orientation" = "Orientation";
+"section.arrangement" = "Arrangement";
 "section.margin" = "Margins";
-"section.page_range" = "Print Page Range (Merged Order)";
+"section.page_range" = "Page range (merged order)";
 
-"empty.title" = "Print three pages on one sheet.";
-"empty.text" = "Select or drop multiple PDFs to impose and print them in order.";
+"empty.title" = "Merge PDFs. Print your way.";
+"empty.text" = "Add or drop PDFs and print 1–16 pages per sheet.\nYour files stay on this Mac.";
 "open_panel.message" = "Select multiple PDFs; the app will impose them in filename order.";
 
 "error.title" = "Unable to Complete";
@@ -132,3 +132,29 @@
 "preview.thumbnails" = "Page Thumbnails";
 "preview.previous" = "Previous preview · check settings";
 "preview.page" = "Page %ld of %ld";
+
+"count.custom" = "Custom (1–16)";
+
+"count.presets" = "Common page counts";
+
+"count.preset_hint" = "Print %ld PDF pages per sheet";
+
+"settings.more" = "More Settings";
+
+"settings.more_hint" = "Margins, borders and page range";
+
+"settings.more_summary" = "%ld mm · %@ · Pages: %@";
+
+"settings.borders_on" = "Borders on";
+
+"settings.borders_off" = "Borders off";
+
+"summary.compact_result" = "%ld pages → %ld print sides";
+
+"detail.compact_result" = "%@ · %@ · %ld pages per sheet";
+
+"print.shortcut_hint" = "Print… (⌘P)";
+
+"print.help_title" = "Printing Help";
+
+"print.layout_hint" = "The app has already arranged the PDF pages. Keep “Pages per Sheet” set to 1 in the system print dialog to avoid shrinking them again.";

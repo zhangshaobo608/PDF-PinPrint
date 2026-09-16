@@ -249,7 +249,7 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_ENTITLEMENTS = PDFPinPrint.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 14;
+				CURRENT_PROJECT_VERSION = 15;
 				ENABLE_APP_SANDBOX = YES;
 				ENABLE_HARDENED_RUNTIME = YES;
 				EXECUTABLE_NAME = PDFPrint;
@@ -259,7 +259,7 @@
 					"$(inherited)",
 					"@executable_path/../Frameworks",
 				);
-				MARKETING_VERSION = 1.2.0;
+				MARKETING_VERSION = 1.2.1;
 				PRODUCT_BUNDLE_IDENTIFIER = com.songningning.pdfpinprint;
 				PRODUCT_NAME = "PDF拼印";
 				SWIFT_EMIT_LOC_STRINGS = YES;
@@ -273,7 +273,7 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_ENTITLEMENTS = PDFPinPrint.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 14;
+				CURRENT_PROJECT_VERSION = 15;
 				ENABLE_APP_SANDBOX = YES;
 				ENABLE_HARDENED_RUNTIME = YES;
 				EXECUTABLE_NAME = PDFPrint;
@@ -283,7 +283,7 @@
 					"$(inherited)",
 					"@executable_path/../Frameworks",
 				);
-				MARKETING_VERSION = 1.2.0;
+				MARKETING_VERSION = 1.2.1;
 				PRODUCT_BUNDLE_IDENTIFIER = com.songningning.pdfpinprint;
 				PRODUCT_NAME = "PDF拼印";
 				SWIFT_EMIT_LOC_STRINGS = YES;

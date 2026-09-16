@@ -49,17 +49,17 @@
 "margin.wide" = "宽 · 15 mm";
 "range.placeholder" = "全部，或 1-6, 8";
 "hint.pages_per_sheet" = "PDF 页 / 纸张单面 · 可输入 1–16";
-"label.pages_per_sheet" = "每面放几页";
+"label.pages_per_sheet" = "每面页数";
 "accessibility.pages_per_sheet" = "每面 PDF 页数";
 "accessibility.page_range" = "合并顺序中的页码范围";
 "section.paper" = "纸张";
 "section.orientation" = "纸张方向";
 "section.arrangement" = "页内排列";
 "section.margin" = "边距";
-"section.page_range" = "打印页码（合并顺序）";
+"section.page_range" = "页码范围（合并顺序）";
 
-"empty.title" = "三页一张，也可以。";
-"empty.text" = "选择或拖入多个 PDF，按顺序拼版打印。";
+"empty.title" = "合并 PDF，按需打印";
+"empty.text" = "添加或拖入多份 PDF，每面可放 1–16 页。\n文件仅在本机处理。";
 "open_panel.message" = "可选择多个 PDF，应用会按文件名顺序连续拼版。";
 
 "error.title" = "无法完成操作";
@@ -132,3 +132,29 @@
 "preview.thumbnails" = "页面缩略图";
 "preview.previous" = "显示上次有效预览，请检查设置";
 "preview.page" = "第 %ld 页，共 %ld 页";
+
+"count.custom" = "自定义（1–16）";
+
+"count.presets" = "常用每面页数";
+
+"count.preset_hint" = "每面打印 %ld 页 PDF";
+
+"settings.more" = "更多设置";
+
+"settings.more_hint" = "边距、边框与页码范围";
+
+"settings.more_summary" = "%ld mm · %@ · 页码：%@";
+
+"settings.borders_on" = "显示边框";
+
+"settings.borders_off" = "无边框";
+
+"summary.compact_result" = "%ld 页 → %ld 个打印面";
+
+"detail.compact_result" = "%@ · %@ · 每面 %ld 页";
+
+"print.shortcut_hint" = "打印…（⌘P）";
+
+"print.help_title" = "打印说明";
+
+"print.layout_hint" = "应用已完成排版。系统打印窗口的“每张页数”保持 1，以免重复缩小。";

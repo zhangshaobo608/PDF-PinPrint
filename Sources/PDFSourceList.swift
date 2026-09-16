@@ -26,7 +26,7 @@ final class PDFSourceList: NSView, NSTableViewDataSource, NSTableViewDelegate, N
         column.minWidth = 140
         tableView.addTableColumn(column)
         tableView.headerView = nil
-        tableView.rowHeight = 62
+        tableView.rowHeight = 54
         tableView.intercellSpacing = NSSize(width: 0, height: 2)
         tableView.columnAutoresizingStyle = .uniformColumnAutoresizingStyle
         tableView.allowsMultipleSelection = false
@@ -236,6 +236,13 @@ private final class SourceCellView: NSTableCellView {
     private let nameLabel = NSTextField(labelWithString: "")
     private let detailLabel = NSTextField(labelWithString: "")
     private let removeButton = NSButton()
+    private var hoverTrackingArea: NSTrackingArea?
+    private var isHovered = false
+    private var allowsPrinting = true
+
+    override var backgroundStyle: NSView.BackgroundStyle {
+        didSet { updateAppearance() }
+    }
 
     override init(frame: NSRect) {
         super.init(frame: frame)
@@ -251,9 +258,11 @@ private final class SourceCellView: NSTableCellView {
         imageView = thumbnail
 
         let text = NSStackView(views: [nameLabel, detailLabel])
+        text.translatesAutoresizingMaskIntoConstraints = false
         text.orientation = .vertical
         text.alignment = .leading
-        text.spacing = 3
+        text.spacing = 2
+        text.setContentHuggingPriority(.defaultLow, for: .horizontal)
         text.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
 
         let removeLabel = L10n.string("queue.remove")
@@ -267,35 +276,75 @@ private final class SourceCellView: NSTableCellView {
         removeButton.action = #selector(remove)
         removeButton.setAccessibilityLabel(removeLabel)
 
-        let content = NSStackView(views: [thumbnail, text, removeButton])
-        content.translatesAutoresizingMaskIntoConstraints = false
-        content.orientation = .horizontal
-        content.alignment = .centerY
-        content.spacing = 8
-        addSubview(content)
+        // Anchor both ends so short filenames never pull the remove action inward.
+        for view in [thumbnail, text, removeButton] {
+            view.translatesAutoresizingMaskIntoConstraints = false
+            addSubview(view)
+        }
         NSLayoutConstraint.activate([
-            thumbnail.widthAnchor.constraint(equalToConstant: 32),
-            thumbnail.heightAnchor.constraint(equalToConstant: 46),
+            thumbnail.widthAnchor.constraint(equalToConstant: 28),
+            thumbnail.heightAnchor.constraint(equalToConstant: 38),
+            thumbnail.leadingAnchor.constraint(equalTo: leadingAnchor, constant: 6),
+            thumbnail.centerYAnchor.constraint(equalTo: centerYAnchor),
             removeButton.widthAnchor.constraint(equalToConstant: 28),
             removeButton.heightAnchor.constraint(equalToConstant: 28),
-            content.leadingAnchor.constraint(equalTo: leadingAnchor, constant: 6),
-            content.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -4),
-            content.topAnchor.constraint(equalTo: topAnchor, constant: 6),
-            content.bottomAnchor.constraint(equalTo: bottomAnchor, constant: -6),
-            text.widthAnchor.constraint(greaterThanOrEqualToConstant: 50)
+            removeButton.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -4),
+            removeButton.centerYAnchor.constraint(equalTo: centerYAnchor),
+            text.leadingAnchor.constraint(equalTo: thumbnail.trailingAnchor, constant: 8),
+            text.trailingAnchor.constraint(equalTo: removeButton.leadingAnchor, constant: -6),
+            text.centerYAnchor.constraint(equalTo: centerYAnchor),
+            nameLabel.widthAnchor.constraint(equalTo: text.widthAnchor),
+            detailLabel.widthAnchor.constraint(equalTo: text.widthAnchor)
         ])
     }
 
     required init?(coder: NSCoder) { fatalError("init(coder:) has not been implemented") }
+
+    override func updateTrackingAreas() {
+        super.updateTrackingAreas()
+        if let hoverTrackingArea { removeTrackingArea(hoverTrackingArea) }
+        let area = NSTrackingArea(rect: .zero,
+                                 options: [.mouseEnteredAndExited, .activeInKeyWindow, .inVisibleRect],
+                                 owner: self, userInfo: nil)
+        addTrackingArea(area)
+        hoverTrackingArea = area
+        if let window {
+            isHovered = window.isKeyWindow && bounds.contains(convert(window.mouseLocationOutsideOfEventStream, from: nil))
+        } else {
+            isHovered = false
+        }
+        updateAppearance()
+    }
+
+    override func mouseEntered(with event: NSEvent) {
+        isHovered = true
+        updateAppearance()
+    }
+
+    override func mouseExited(with event: NSEvent) {
+        isHovered = false
+        updateAppearance()
+    }
 
     func configure(source: PDFSource) {
         thumbnail.image = source.thumbnail ?? NSImage(systemSymbolName: "doc", accessibilityDescription: nil)
         nameLabel.stringValue = source.name
         let detailKey = source.allowsPrinting ? "queue.ready" : "queue.print_restricted"
         detailLabel.stringValue = L10n.format(detailKey, source.pageCount)
-        detailLabel.textColor = source.allowsPrinting ? .secondaryLabelColor : .systemOrange
+        allowsPrinting = source.allowsPrinting
+        updateAppearance()
         toolTip = "\(source.name)\n\(detailLabel.stringValue)"
         removeButton.setAccessibilityLabel("\(L10n.string("queue.remove")): \(source.name)")
+    }
+
+    private func updateAppearance() {
+        let isSelected = backgroundStyle == .emphasized
+        // Keep the system row highlight and ensure its contents retain contrast.
+        nameLabel.textColor = isSelected ? .alternateSelectedControlTextColor : .labelColor
+        detailLabel.textColor = isSelected ? .alternateSelectedControlTextColor
+            : (allowsPrinting ? .secondaryLabelColor : .systemOrange)
+        removeButton.contentTintColor = isSelected ? .alternateSelectedControlTextColor
+            : (isHovered ? .labelColor : .secondaryLabelColor)
     }
 
     @objc private func remove() { onRemove?() }
