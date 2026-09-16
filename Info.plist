@@ -1,15 +1,15 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0"><dict>
-<key>CFBundleDevelopmentRegion</key><string>zh_CN</string>
-<key>CFBundleLocalizations</key><array><string>zh_CN</string><string>en</string></array>
-<key>CFBundleDisplayName</key><string>PDF拼印</string>
-<key>CFBundleName</key><string>PDF拼印</string>
+<key>CFBundleDevelopmentRegion</key><string>en</string>
+<key>CFBundleLocalizations</key><array><string>en</string><string>zh-Hans</string></array>
+<key>CFBundleDisplayName</key><string>PDF Merge &amp; Print</string>
+<key>CFBundleName</key><string>PDF Merge &amp; Print</string>
 <key>CFBundleExecutable</key><string>PDFPrint</string>
 <key>CFBundleIdentifier</key><string>com.songningning.pdfpinprint</string>
 <key>CFBundlePackageType</key><string>APPL</string>
-<key>CFBundleShortVersionString</key><string>1.1.0</string>
-<key>CFBundleVersion</key><string>10</string>
+<key>CFBundleShortVersionString</key><string>1.1.1</string>
+<key>CFBundleVersion</key><string>12</string>
 <key>CFBundleIconFile</key><string>AppIcon.icns</string>
 <key>LSMinimumSystemVersion</key><string>13.0</string>
 <key>LSApplicationCategoryType</key><string>public.app-category.utilities</string>
@@ -22,5 +22,5 @@
 <key>LSHandlerRank</key><string>Alternate</string>
 <key>LSItemContentTypes</key><array><string>com.adobe.pdf</string></array>
 </dict></array>
-<key>NSHumanReadableCopyright</key><string>Copyright © 2026 PDF拼印</string>
+<key>NSHumanReadableCopyright</key><string>Copyright © 2026 PDF Merge &amp; Print</string>
 </dict></plist>

@@ -7,6 +7,7 @@ struct PDFSource {
     let name: String
     let pageCount: Int
     let allowsPrinting: Bool
+    let thumbnail: NSImage?
 }
 
 struct PrintSettings {
@@ -48,7 +49,7 @@ struct ImpositionResult {
 enum Imposition {
     static func pageIndices(_ input: String, count: Int) throws -> [Int] {
         let text = input.trimmingCharacters(in: .whitespacesAndNewlines)
-        if text.isEmpty || text == "全部" { return Array(0..<count) }
+        if text.isEmpty || text == L10n.string("range.all") { return Array(0..<count) }
         var pages: [Int] = []
         var seen = Set<Int>()
         let normalized = text.replacingOccurrences(of: "，", with: ",")
@@ -58,12 +59,12 @@ enum Imposition {
                 .map { $0.trimmingCharacters(in: .whitespaces) }
             guard (1...2).contains(bounds.count), let first = Int(bounds[0]),
                   first >= 1, first <= count else {
-                throw LayoutError.message("页码应在 1–\(count) 之间，例如：1-6, 8。")
+                throw LayoutError.message(L10n.format("error.page_range_bounds", count))
             }
             let last: Int
             if bounds.count == 2 {
                 guard let end = Int(bounds[1]), end >= first, end <= count else {
-                    throw LayoutError.message("请填写有效的页码范围，例如：1-6, 8。")
+                    throw LayoutError.message(L10n.string("error.page_range_invalid"))
                 }
                 last = end
             } else { last = first }
@@ -113,17 +114,17 @@ enum Imposition {
         for source in sources {
             if cancelled() { return nil }
             guard let document = PDFDocument(data: source.data) else {
-                throw LayoutError.message("无法读取“\(source.name)”。")
+                throw LayoutError.message(L10n.format("error.read_pdf", source.name))
             }
             if document.isLocked, !document.unlock(withPassword: source.password ?? "") {
-                throw LayoutError.message("“\(source.name)”的密码不正确。")
+                throw LayoutError.message(L10n.format("error.wrong_password", source.name))
             }
             guard document.allowsPrinting else {
-                throw LayoutError.message("“\(source.name)”的权限不允许打印。")
+                throw LayoutError.message(L10n.format("error.print_restricted_file", source.name))
             }
             for pageIndex in 0..<document.pageCount {
                 guard let page = document.page(at: pageIndex) else {
-                    throw LayoutError.message("无法读取“\(source.name)”的第 \(pageIndex + 1) 页。")
+                    throw LayoutError.message(L10n.format("error.read_page", source.name, pageIndex + 1))
                 }
                 pages.append(page)
             }
@@ -133,13 +134,13 @@ enum Imposition {
         let paper = settings.paperSize
         let cellW = (paper.width - 2 * settings.margin - CGFloat(columns - 1) * gap) / CGFloat(columns)
         let cellH = (paper.height - 2 * settings.margin - CGFloat(rows - 1) * gap) / CGFloat(rows)
-        guard cellW > 0, cellH > 0 else { throw LayoutError.message("当前排版过密，请减少每面页数或缩小边距。") }
+        guard cellW > 0, cellH > 0 else { throw LayoutError.message(L10n.string("error.layout_too_dense")) }
         let data = NSMutableData()
         var mediaBox = CGRect(origin: .zero, size: paper)
         guard let consumer = CGDataConsumer(data: data as CFMutableData),
               let context = CGContext(consumer: consumer, mediaBox: &mediaBox,
-                                      [kCGPDFContextCreator: "PDF拼印"] as CFDictionary) else {
-            throw LayoutError.message("无法创建打印页面。")
+                                      [kCGPDFContextCreator: L10n.string("app.name")] as CFDictionary) else {
+            throw LayoutError.message(L10n.string("error.create_page"))
         }
         let sheetCount = (settings.pageIndices.count + settings.pagesPerSheet - 1) / settings.pagesPerSheet
         for sheet in 0..<sheetCount {
@@ -153,12 +154,12 @@ enum Imposition {
                 if offset >= settings.pageIndices.count { break }
                 let sourcePageIndex = settings.pageIndices[offset]
                 guard pages.indices.contains(sourcePageIndex) else {
-                    throw LayoutError.message("无法读取第 \(settings.pageIndices[offset] + 1) 页。")
+                    throw LayoutError.message(L10n.format("error.read_indexed_page", settings.pageIndices[offset] + 1))
                 }
                 let page = pages[sourcePageIndex]
                 let size = displaySize(page)
                 guard size.width > 0, size.height > 0 else {
-                    throw LayoutError.message("第 \(settings.pageIndices[offset] + 1) 页尺寸无效。")
+                    throw LayoutError.message(L10n.format("error.invalid_page_size", settings.pageIndices[offset] + 1))
                 }
                 let column = slot % columns
                 let row = slot / columns

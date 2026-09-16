@@ -3,7 +3,7 @@ set -euo pipefail
 
 ROOT_DIR="$(cd "$(dirname "$0")" && pwd)"
 BUILD_DIR="$ROOT_DIR/.build"
-DIST_DIR="$ROOT_DIR/dist"
+DIST_DIR="$ROOT_DIR/dist.noindex"
 APP="$DIST_DIR/PDF拼印.app"
 
 mkdir -p "$BUILD_DIR" "$APP/Contents/MacOS" "$APP/Contents/Resources"
@@ -22,10 +22,11 @@ xcrun lipo -create \
 
 cp "$ROOT_DIR/Info.plist" "$APP/Contents/Info.plist"
 cp "$ROOT_DIR/Resources/AppIcon.icns" "$APP/Contents/Resources/AppIcon.icns"
+ditto "$ROOT_DIR/Resources/en.lproj" "$APP/Contents/Resources/en.lproj"
+ditto "$ROOT_DIR/Resources/zh-Hans.lproj" "$APP/Contents/Resources/zh-Hans.lproj"
 
 codesign --force --sign - "$APP"
 codesign --verify --deep --strict "$APP"
 ditto -c -k --sequesterRsrc --keepParent "$APP" "$DIST_DIR/PDF拼印-macOS.zip"
 
 echo "Built: $APP"
-

@@ -17,3 +17,25 @@
 ## 获取帮助
 
 请在 [GitHub Issues](https://github.com/zhangshaobo608/PDF-PinPrint/issues) 提交问题，并说明 macOS 版本、操作步骤和实际表现。请勿上传包含隐私信息的 PDF 文件。
+
+---
+
+# PDF Merge & Print Support
+
+## Requirements
+
+- macOS 13 or later
+- Apple silicon or Intel Mac
+
+## Basic use
+
+1. Click “Select Multiple PDFs…” or drag PDF files into the window.
+2. Set pages per sheet, paper, orientation, arrangement, and margins.
+3. Check the imposed result in “Print Preview”.
+4. Click “Print…” to open the native macOS print dialog, or choose “Export imposed PDF…”.
+
+Multiple PDFs are processed as one continuous page queue in filename order. Keep the system print dialog’s pages-per-sheet setting at 1 because the app has already imposed the pages.
+
+## Get help
+
+Open a [GitHub Issue](https://github.com/zhangshaobo608/PDF-PinPrint/issues) with your macOS version, steps to reproduce, and the observed result. Do not upload PDFs that contain private information.
