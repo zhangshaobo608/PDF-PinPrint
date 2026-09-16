@@ -141,9 +141,12 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSTextFieldDelegate, N
     let exportButton = NSButton(title: L10n.string("button.export"), target: nil, action: nil)
     let spinner = NSProgressIndicator()
     let sourceQueueBox = NSStackView()
+    let sourceQueueScroll = NSScrollView()
     let sourceQueueRows = NSStackView()
     let sourceQueueCount = NSTextField(labelWithString: "")
     let sourceQueueTotal = NSTextField(labelWithString: "")
+    var sourceQueueHeightConstraint: NSLayoutConstraint!
+    var sourceQueueRowsHeightConstraint: NSLayoutConstraint!
     var sourceDocument: PDFDocument?
     var sourceItems: [PDFSource] = []
     var sourceURLs: [URL] = []
@@ -327,6 +330,22 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSTextFieldDelegate, N
         sourceQueueRows.distribution = .fill
         sourceQueueRows.spacing = 0
         sourceQueueRows.translatesAutoresizingMaskIntoConstraints = false
+        sourceQueueScroll.drawsBackground = false
+        sourceQueueScroll.hasVerticalScroller = true
+        sourceQueueScroll.hasHorizontalScroller = false
+        sourceQueueScroll.autohidesScrollers = true
+        sourceQueueScroll.borderType = .noBorder
+        sourceQueueScroll.translatesAutoresizingMaskIntoConstraints = false
+        sourceQueueScroll.documentView = sourceQueueRows
+        sourceQueueHeightConstraint = sourceQueueScroll.heightAnchor.constraint(equalToConstant: 58)
+        sourceQueueRowsHeightConstraint = sourceQueueRows.heightAnchor.constraint(equalToConstant: 58)
+        NSLayoutConstraint.activate([
+            sourceQueueRows.leadingAnchor.constraint(equalTo: sourceQueueScroll.contentView.leadingAnchor),
+            sourceQueueRows.trailingAnchor.constraint(equalTo: sourceQueueScroll.contentView.trailingAnchor),
+            sourceQueueRows.topAnchor.constraint(equalTo: sourceQueueScroll.contentView.topAnchor),
+            sourceQueueHeightConstraint,
+            sourceQueueRowsHeightConstraint
+        ])
         let queueTitle = label(L10n.string("queue.title"), size: 12, weight: .semibold)
         sourceQueueCount.font = .systemFont(ofSize: 11)
         sourceQueueCount.textColor = .secondaryLabelColor
@@ -357,7 +376,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSTextFieldDelegate, N
         sourceQueueBox.layer?.cornerRadius = 7
         sourceQueueBox.layer?.backgroundColor = NSColor.controlBackgroundColor.cgColor
         sourceQueueBox.addArrangedSubview(queueHeader)
-        sourceQueueBox.addArrangedSubview(sourceQueueRows)
+        sourceQueueBox.addArrangedSubview(sourceQueueScroll)
         sourceQueueBox.addArrangedSubview(queueFooter)
         sourceQueueBox.setContentHuggingPriority(.required, for: .vertical)
         sourceQueueBox.setContentCompressionResistancePriority(.required, for: .vertical)
@@ -365,7 +384,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSTextFieldDelegate, N
         sourceQueueBox.translatesAutoresizingMaskIntoConstraints = false
         queueHeader.widthAnchor.constraint(equalTo: sourceQueueBox.widthAnchor, constant: -16).isActive = true
         queueFooter.widthAnchor.constraint(equalTo: sourceQueueBox.widthAnchor, constant: -16).isActive = true
-        sourceQueueRows.widthAnchor.constraint(equalTo: sourceQueueBox.widthAnchor).isActive = true
+        sourceQueueScroll.widthAnchor.constraint(equalTo: sourceQueueBox.widthAnchor).isActive = true
         let stack = NSStackView(views: [title, subtitle, open, sourceQueueBox, countGroup,
             section(L10n.string("section.paper"), paperPopup), section(L10n.string("section.orientation"), orientation),
             section(L10n.string("section.arrangement"), arrangement), section(L10n.string("section.margin"), margins), borderCheckbox, section(L10n.string("section.page_range"), rangeField)])
@@ -377,7 +396,19 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSTextFieldDelegate, N
         stack.setCustomSpacing(19, after: subtitle)
         stack.setCustomSpacing(18, after: open)
         stack.translatesAutoresizingMaskIntoConstraints = false
-        sidebar.addSubview(stack)
+        let sidebarScroll = NSScrollView()
+        sidebarScroll.drawsBackground = false
+        sidebarScroll.hasVerticalScroller = true
+        sidebarScroll.hasHorizontalScroller = false
+        sidebarScroll.autohidesScrollers = false
+        sidebarScroll.scrollerStyle = .legacy
+        sidebarScroll.borderType = .noBorder
+        sidebarScroll.translatesAutoresizingMaskIntoConstraints = false
+        let sidebarDocument = NSView()
+        sidebarDocument.translatesAutoresizingMaskIntoConstraints = false
+        sidebarScroll.documentView = sidebarDocument
+        sidebar.addSubview(sidebarScroll)
+        sidebarDocument.addSubview(stack)
         for view in [open, sourceQueueBox, countGroup] { view.widthAnchor.constraint(equalTo: stack.widthAnchor).isActive = true }
         for view in stack.arrangedSubviews where view is NSStackView { view.widthAnchor.constraint(equalTo: stack.widthAnchor).isActive = true }
         printButton.target = self; printButton.action = #selector(printPDF); printButton.bezelStyle = .rounded
@@ -390,12 +421,21 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSTextFieldDelegate, N
         printButton.widthAnchor.constraint(equalTo: actions.widthAnchor).isActive = true
         exportButton.widthAnchor.constraint(equalTo: actions.widthAnchor).isActive = true
         NSLayoutConstraint.activate([
-            stack.leadingAnchor.constraint(equalTo: sidebar.leadingAnchor, constant: 20),
-            stack.trailingAnchor.constraint(equalTo: sidebar.trailingAnchor, constant: -20),
-            stack.topAnchor.constraint(equalTo: sidebar.topAnchor, constant: 23),
-            actions.leadingAnchor.constraint(equalTo: stack.leadingAnchor), actions.trailingAnchor.constraint(equalTo: stack.trailingAnchor),
+            sidebarScroll.leadingAnchor.constraint(equalTo: sidebar.leadingAnchor),
+            sidebarScroll.trailingAnchor.constraint(equalTo: sidebar.trailingAnchor),
+            sidebarScroll.topAnchor.constraint(equalTo: sidebar.topAnchor),
+            sidebarScroll.bottomAnchor.constraint(equalTo: actions.topAnchor, constant: -18),
+            sidebarDocument.leadingAnchor.constraint(equalTo: sidebarScroll.contentView.leadingAnchor),
+            sidebarDocument.topAnchor.constraint(equalTo: sidebarScroll.contentView.topAnchor),
+            sidebarDocument.widthAnchor.constraint(equalTo: sidebarScroll.contentView.widthAnchor),
+            sidebarDocument.heightAnchor.constraint(greaterThanOrEqualTo: sidebarScroll.contentView.heightAnchor),
+            stack.leadingAnchor.constraint(equalTo: sidebarDocument.leadingAnchor, constant: 20),
+            stack.trailingAnchor.constraint(equalTo: sidebarDocument.trailingAnchor, constant: -20),
+            stack.topAnchor.constraint(equalTo: sidebarDocument.topAnchor, constant: 23),
+            stack.bottomAnchor.constraint(equalTo: sidebarDocument.bottomAnchor, constant: -23),
+            actions.leadingAnchor.constraint(equalTo: sidebar.leadingAnchor, constant: 20),
+            actions.trailingAnchor.constraint(equalTo: sidebar.trailingAnchor, constant: -20),
             actions.bottomAnchor.constraint(equalTo: sidebar.bottomAnchor, constant: -20),
-            actions.topAnchor.constraint(greaterThanOrEqualTo: stack.bottomAnchor, constant: 18)
         ])
         mode.selectedSegment = 1; mode.target = self; mode.action = #selector(changeMode)
         let fit = button(L10n.string("button.fit"), #selector(fitPage))
@@ -555,6 +595,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSTextFieldDelegate, N
         sourceQueueCount.stringValue = L10n.format("queue.count", sourceItems.count)
         sourceQueueTotal.stringValue = L10n.format("queue.total_pages", totalPages)
         sourceQueueBox.isHidden = sourceItems.isEmpty
+        let queueContentHeight = max(CGFloat(sourceItems.count) * 58, 1)
+        sourceQueueRowsHeightConstraint.constant = queueContentHeight
+        sourceQueueHeightConstraint.constant = min(queueContentHeight, 232)
+        sourceQueueScroll.hasVerticalScroller = queueContentHeight > 232
         for (index, source) in sourceItems.enumerated() {
             let row = PDFQueueRow(source: source, index: index)
             row.onMoveUp = { [weak self] in self?.moveSource(from: index, to: index - 1) }
@@ -589,7 +633,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSTextFieldDelegate, N
             sourceDocument = try makePreviewDocument()
             updateSourceMetadata()
             refreshSourceQueue()
-            emptyView.isHidden = sourceItems.isEmpty
+            emptyView.isHidden = !sourceItems.isEmpty
             pdfView.document = sourceDocument
             mode.selectedSegment = 1
             regenerate()
@@ -613,6 +657,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSTextFieldDelegate, N
             sourceDetail.stringValue = L10n.string("source.local_only")
             sourceQueueBox.isHidden = true
             emptyView.isHidden = false
+            pdfView.document = nil
+            pageLabel.stringValue = ""
             window.title = L10n.string("app.name")
             window.representedURL = nil
             rangeField.stringValue = ""
@@ -620,6 +666,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSTextFieldDelegate, N
             summary.stringValue = L10n.string("summary.ready")
             detail.stringValue = L10n.string("detail.default")
             status.stringValue = ""
+            updateAvailability()
             return
         }
         applySourceOrderChange()
