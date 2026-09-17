@@ -11,7 +11,7 @@ mkdir -p "$BUILD_DIR" "$APP/Contents/MacOS" "$APP/Contents/Resources"
 for ARCH in arm64 x86_64; do
   xcrun swiftc -O -swift-version 5 -target "$ARCH-apple-macos13.0" \
     -framework AppKit -framework PDFKit -framework UniformTypeIdentifiers \
-    "$ROOT_DIR/Sources/Imposition.swift" "$ROOT_DIR/Sources/PDFSourceList.swift" "$ROOT_DIR/Sources/main.swift" \
+    "$ROOT_DIR/Sources/Imposition.swift" "$ROOT_DIR/Sources/PDFSourceList.swift" "$ROOT_DIR/Sources/PrintPresets.swift" "$ROOT_DIR/Sources/main.swift" \
     -o "$BUILD_DIR/PDFPrint-$ARCH"
 done
 

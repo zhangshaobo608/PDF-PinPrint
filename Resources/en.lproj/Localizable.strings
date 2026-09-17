@@ -158,3 +158,32 @@
 "print.help_title" = "Printing Help";
 
 "print.layout_hint" = "The app has already arranged the PDF pages. Keep “Pages per Sheet” set to 1 in the system print dialog to avoid shrinking them again.";
+
+// Print presets and queue undo
+"menu.undo" = "Undo";
+"menu.redo" = "Redo";
+"menu.undo_action" = "Undo %@";
+"menu.redo_action" = "Redo %@";
+"undo.add_files" = "Add PDFs";
+"undo.remove_file" = "Remove PDF";
+"undo.reorder_files" = "Reorder Files";
+"preset.label" = "Print preset";
+"preset.custom" = "Custom Settings";
+"preset.save" = "Save Current Settings…";
+"preset.rename" = "Rename Preset…";
+"preset.delete" = "Delete Preset…";
+"preset.save_title" = "Save Print Preset";
+"preset.rename_title" = "Rename Print Preset";
+"preset.save_hint" = "Save pages per sheet, paper, orientation, arrangement, margins and borders for reuse. Files, page range and printer settings are not included.";
+"preset.name_placeholder" = "For example: Invoices, 3 per sheet";
+"preset.name_label" = "Preset name";
+"preset.save_button" = "Save";
+"preset.delete_title" = "Delete “%@”?";
+"preset.delete_hint" = "Your current layout settings will be kept.";
+"preset.delete_button" = "Delete";
+"preset.error.name_required" = "Enter a preset name.";
+"preset.error.name_too_long" = "Use a name of 60 characters or fewer.";
+"preset.error.name_exists" = "A preset with this name already exists.";
+"preset.error.invalid_layout" = "Enter valid layout settings first.";
+"preset.error.not_found" = "This print preset could not be found.";
+"preset.error.save_failed" = "Unable to save the print preset. Please try again.";

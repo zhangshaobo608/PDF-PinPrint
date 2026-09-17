@@ -16,6 +16,7 @@
 		A00000000000000000000007 /* Localizable.strings in Resources */ = {isa = PBXBuildFile; fileRef = B00000000000000000000010 /* Localizable.strings */; };
 		A00000000000000000000008 /* InfoPlist.strings in Resources */ = {isa = PBXBuildFile; fileRef = B00000000000000000000013 /* InfoPlist.strings */; };
 		A00000000000000000000009 /* PDFSourceList.swift in Sources */ = {isa = PBXBuildFile; fileRef = B00000000000000000000016 /* PDFSourceList.swift */; };
+		A00000000000000000000010 /* PrintPresets.swift in Sources */ = {isa = PBXBuildFile; fileRef = B00000000000000000000017 /* PrintPresets.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -33,6 +34,7 @@
 		B00000000000000000000014 /* en InfoPlist.strings */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; path = en.lproj/InfoPlist.strings; sourceTree = "<group>"; };
 		B00000000000000000000015 /* zh-Hans InfoPlist.strings */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; path = zh-Hans.lproj/InfoPlist.strings; sourceTree = "<group>"; };
 		B00000000000000000000016 /* PDFSourceList.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PDFSourceList.swift; sourceTree = "<group>"; };
+		B00000000000000000000017 /* PrintPresets.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PrintPresets.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXVariantGroup section */
@@ -88,6 +90,7 @@
 				B00000000000000000000001 /* main.swift */,
 				B00000000000000000000002 /* Imposition.swift */,
 				B00000000000000000000016 /* PDFSourceList.swift */,
+				B00000000000000000000017 /* PrintPresets.swift */,
 			);
 			path = Sources;
 			sourceTree = "<group>";
@@ -199,6 +202,7 @@
 			files = (
 				A00000000000000000000002 /* Imposition.swift in Sources */,
 				A00000000000000000000009 /* PDFSourceList.swift in Sources */,
+				A00000000000000000000010 /* PrintPresets.swift in Sources */,
 				A00000000000000000000001 /* main.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -249,7 +253,7 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_ENTITLEMENTS = PDFPinPrint.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 15;
+				CURRENT_PROJECT_VERSION = 16;
 				ENABLE_APP_SANDBOX = YES;
 				ENABLE_HARDENED_RUNTIME = YES;
 				EXECUTABLE_NAME = PDFPrint;
@@ -259,7 +263,7 @@
 					"$(inherited)",
 					"@executable_path/../Frameworks",
 				);
-				MARKETING_VERSION = 1.2.1;
+				MARKETING_VERSION = 1.3.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.songningning.pdfpinprint;
 				PRODUCT_NAME = "PDF拼印";
 				SWIFT_EMIT_LOC_STRINGS = YES;
@@ -273,7 +277,7 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_ENTITLEMENTS = PDFPinPrint.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 15;
+				CURRENT_PROJECT_VERSION = 16;
 				ENABLE_APP_SANDBOX = YES;
 				ENABLE_HARDENED_RUNTIME = YES;
 				EXECUTABLE_NAME = PDFPrint;
@@ -283,7 +287,7 @@
 					"$(inherited)",
 					"@executable_path/../Frameworks",
 				);
-				MARKETING_VERSION = 1.2.1;
+				MARKETING_VERSION = 1.3.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.songningning.pdfpinprint;
 				PRODUCT_NAME = "PDF拼印";
 				SWIFT_EMIT_LOC_STRINGS = YES;

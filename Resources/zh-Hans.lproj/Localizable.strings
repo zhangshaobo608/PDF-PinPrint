@@ -158,3 +158,32 @@
 "print.help_title" = "打印说明";
 
 "print.layout_hint" = "应用已完成排版。系统打印窗口的“每张页数”保持 1，以免重复缩小。";
+
+// Print presets and queue undo
+"menu.undo" = "撤销";
+"menu.redo" = "重做";
+"menu.undo_action" = "撤销%@";
+"menu.redo_action" = "重做%@";
+"undo.add_files" = "添加 PDF";
+"undo.remove_file" = "移除 PDF";
+"undo.reorder_files" = "文件排序";
+"preset.label" = "打印方案";
+"preset.custom" = "自定义设置";
+"preset.save" = "存储当前设置…";
+"preset.rename" = "重命名方案…";
+"preset.delete" = "删除方案…";
+"preset.save_title" = "存储打印方案";
+"preset.rename_title" = "重命名打印方案";
+"preset.save_hint" = "保存每面页数、纸张、方向、排列、边距和边框，供下次使用。文件、页码范围和打印机设置不包含在方案中。";
+"preset.name_placeholder" = "例如：发票三页一张";
+"preset.name_label" = "方案名称";
+"preset.save_button" = "存储";
+"preset.delete_title" = "删除“%@”？";
+"preset.delete_hint" = "删除后将保留当前排版设置。";
+"preset.delete_button" = "删除";
+"preset.error.name_required" = "请输入方案名称。";
+"preset.error.name_too_long" = "名称最多为 60 个字符。";
+"preset.error.name_exists" = "已有同名方案，请换个名称。";
+"preset.error.invalid_layout" = "请先填写有效的排版设置。";
+"preset.error.not_found" = "未找到该打印方案。";
+"preset.error.save_failed" = "无法存储打印方案，请重试。";

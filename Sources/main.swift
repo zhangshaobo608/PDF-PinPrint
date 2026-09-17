@@ -34,6 +34,13 @@ final class FlippedView: NSView {
     override var isFlipped: Bool { true }
 }
 
+struct SourceQueueState {
+    var items: [PDFSource]
+    var urls: [URL]
+    var selectedIndex: Int
+    var pageRange: String
+}
+
 final class AppDelegate: NSObject, NSApplicationDelegate, NSTextFieldDelegate, NSMenuItemValidation, NSToolbarDelegate, NSToolbarItemValidation {
     var window: NSWindow!
     var appIcon: NSImage?
@@ -46,6 +53,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSTextFieldDelegate, N
     let presetCounts = [1, 2, 3, 4, 5, 6]
     let countPresets = NSSegmentedControl(labels: ["1", "2", "3", "4", "5", "6"], trackingMode: .selectOne, target: nil, action: nil)
     let printButton = NSButton()
+    let layoutPresetPopup = NSPopUpButton()
+    let presetStore = PrintPresetStore()
+    var selectedPresetID: UUID?
+    let queueUndoManager = UndoManager()
     let moreSettingsButton = NSButton()
     let moreSettingsContent = NSStackView()
     let moreSettingsHint = NSTextField(wrappingLabelWithString: "")
@@ -107,6 +118,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSTextFieldDelegate, N
         }
         renderQueue.maxConcurrentOperationCount = 1
         renderQueue.qualityOfService = .userInitiated
+        queueUndoManager.groupsByEvent = false
+        queueUndoManager.levelsOfUndo = 30
         makeMenu()
         makeWindow()
         window.makeKeyAndOrderFront(nil)
@@ -149,6 +162,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSTextFieldDelegate, N
         menu.addItem(fileItem)
         let editItem = NSMenuItem()
         let editMenu = NSMenu(title: L10n.string("menu.edit"))
+        let undoItem = editMenu.addItem(withTitle: L10n.string("menu.undo"), action: #selector(undoChange), keyEquivalent: "z")
+        undoItem.target = self
+        let redoItem = editMenu.addItem(withTitle: L10n.string("menu.redo"), action: #selector(redoChange), keyEquivalent: "z")
+        redoItem.target = self; redoItem.keyEquivalentModifierMask = [.command, .shift]
+        editMenu.addItem(.separator())
         editMenu.addItem(withTitle: L10n.string("menu.cut"), action: #selector(NSText.cut(_:)), keyEquivalent: "x")
         editMenu.addItem(withTitle: L10n.string("menu.copy"), action: #selector(NSText.copy(_:)), keyEquivalent: "c")
         editMenu.addItem(withTitle: L10n.string("menu.paste"), action: #selector(NSText.paste(_:)), keyEquivalent: "v")
@@ -189,11 +207,31 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSTextFieldDelegate, N
     }
 
     func validateMenuItem(_ item: NSMenuItem) -> Bool {
+        if item.action == #selector(undoChange) || item.action == #selector(redoChange) {
+            let isUndo = item.action == #selector(undoChange)
+            let manager = activeUndoManager
+            let name = isUndo ? manager?.undoActionName : manager?.redoActionName
+            let key = isUndo ? "menu.undo" : "menu.redo"
+            item.title = name?.isEmpty == false ? L10n.format(key + "_action", name!) : L10n.string(key)
+            return (isUndo ? manager?.canUndo : manager?.canRedo) == true
+        }
         if item.action == #selector(showOriginal) { item.state = mode.selectedSegment == 0 ? .on : .off }
         if item.action == #selector(showPrintPreview) { item.state = mode.selectedSegment == 1 ? .on : .off }
         if item.action == #selector(toggleSidebar) { item.state = sidebarItem?.isCollapsed == false ? .on : .off }
         return canPerform(item.action)
     }
+
+    // Keep text editing history separate from file queue history.
+    var activeUndoManager: UndoManager? {
+        let activeWindow = NSApp.keyWindow ?? window
+        if let editor = activeWindow?.firstResponder as? NSTextView, editor.isEditable {
+            return editor.undoManager
+        }
+        return activeWindow === window && window.attachedSheet == nil ? queueUndoManager : nil
+    }
+
+    @objc func undoChange() { activeUndoManager?.undo() }
+    @objc func redoChange() { activeUndoManager?.redo() }
 
     func canPerform(_ action: Selector?) -> Bool {
         switch action {
@@ -376,6 +414,125 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSTextFieldDelegate, N
             "margin": margins.indexOfSelectedItem, "borders": borderCheckbox.state == .on], forKey: "printSettings")
     }
 
+    var currentPrintLayout: PrintLayout? {
+        guard let count = Int(countField.stringValue.trimmingCharacters(in: .whitespaces)) else { return nil }
+        let layout = PrintLayout(pagesPerSheet: count, paperIndex: paperPopup.indexOfSelectedItem,
+            landscape: orientation.selectedSegment == 1, arrangement: arrangement.indexOfSelectedItem,
+            marginIndex: margins.indexOfSelectedItem, showsBorders: borderCheckbox.state == .on)
+        return layout.isValid ? layout : nil
+    }
+
+    func syncPrintPresets() {
+        let layout = currentPrintLayout
+        let matching = presetStore.presets.filter { $0.layout == layout }
+        selectedPresetID = matching.first(where: { $0.id == selectedPresetID })?.id ?? matching.first?.id
+        let menu = NSMenu(); menu.autoenablesItems = false
+        menu.addItem(withTitle: L10n.string("preset.custom"), action: nil, keyEquivalent: "").tag = 0
+        for preset in presetStore.presets {
+            let item = menu.addItem(withTitle: preset.name, action: nil, keyEquivalent: "")
+            item.representedObject = preset.id.uuidString
+            item.toolTip = L10n.format("detail.compact_result", ["A4", "A3", "Letter"][preset.layout.paperIndex],
+                L10n.string(preset.layout.landscape ? "orientation.landscape" : "orientation.portrait"), preset.layout.pagesPerSheet)
+        }
+        menu.addItem(.separator())
+        for (key, tag, enabled) in [("preset.save", -1, layout != nil),
+                                   ("preset.rename", -2, selectedPresetID != nil),
+                                   ("preset.delete", -3, selectedPresetID != nil)] {
+            let item = menu.addItem(withTitle: L10n.string(key), action: nil, keyEquivalent: "")
+            item.tag = tag; item.isEnabled = enabled
+        }
+        layoutPresetPopup.menu = menu
+        if let selectedPresetID, let item = menu.items.first(where: { ($0.representedObject as? String) == selectedPresetID.uuidString }) {
+            layoutPresetPopup.select(item)
+        } else { layoutPresetPopup.selectItem(at: 0) }
+        layoutPresetPopup.toolTip = layoutPresetPopup.title
+        layoutPresetPopup.isEnabled = sourceDocument != nil
+    }
+
+    @objc func choosePrintPreset() {
+        guard let item = layoutPresetPopup.selectedItem else { return }
+        let tag = item.tag
+        let identifier = (item.representedObject as? String).flatMap(UUID.init(uuidString:))
+        let previousID = selectedPresetID
+        // Finish a live field edit before replacing the settings it contains.
+        window.makeFirstResponder(layoutPresetPopup)
+        if let identifier, let preset = presetStore.presets.first(where: { $0.id == identifier }) {
+            let layout = preset.layout
+            countField.integerValue = layout.pagesPerSheet
+            paperPopup.selectItem(at: layout.paperIndex)
+            orientation.selectedSegment = layout.landscape ? 1 : 0
+            arrangement.selectItem(at: layout.arrangement)
+            margins.selectItem(at: layout.marginIndex)
+            borderCheckbox.state = layout.showsBorders ? .on : .off
+            selectedPresetID = identifier
+            regenerate()
+            return
+        }
+        syncPrintPresets()
+        if tag == -1, let layout = currentPrintLayout { promptPresetName(existing: nil, layout: layout) }
+        if tag == -2, let preset = presetStore.presets.first(where: { $0.id == previousID }) {
+            promptPresetName(existing: preset, layout: preset.layout)
+        }
+        if tag == -3, let preset = presetStore.presets.first(where: { $0.id == previousID }) {
+            let alert = NSAlert(); alert.messageText = L10n.format("preset.delete_title", preset.name)
+            alert.informativeText = L10n.string("preset.delete_hint")
+            alert.addButton(withTitle: L10n.string("preset.delete_button"))
+            alert.addButton(withTitle: L10n.string("button.cancel"))
+            alert.beginSheetModal(for: window) { [weak self] response in
+                guard let self, response == .alertFirstButtonReturn else { return }
+                do {
+                    try self.presetStore.remove(id: preset.id)
+                    self.selectedPresetID = nil; self.syncPrintPresets()
+                } catch { self.showError(error.localizedDescription) }
+            }
+        }
+    }
+
+    func promptPresetName(existing: SavedPrintPreset?, layout: PrintLayout) {
+        let alert = NSAlert()
+        alert.messageText = L10n.string(existing == nil ? "preset.save_title" : "preset.rename_title")
+        alert.informativeText = L10n.string("preset.save_hint")
+        let field = NSTextField(string: existing?.name ?? "")
+        field.placeholderString = L10n.string("preset.name_placeholder")
+        field.setAccessibilityLabel(L10n.string("preset.name_label"))
+        field.widthAnchor.constraint(equalToConstant: 300).isActive = true
+        let validation = NSTextField(wrappingLabelWithString: " ")
+        validation.font = .systemFont(ofSize: 11); validation.textColor = .secondaryLabelColor
+        validation.widthAnchor.constraint(equalToConstant: 300).isActive = true
+        let accessory = NSStackView(views: [field, validation])
+        accessory.orientation = .vertical; accessory.alignment = .leading; accessory.spacing = 8
+        accessory.frame = NSRect(x: 0, y: 0, width: 300, height: 64)
+        alert.accessoryView = accessory
+        let save = alert.addButton(withTitle: L10n.string("preset.save_button"))
+        alert.addButton(withTitle: L10n.string("button.cancel"))
+        let validate = { [weak self] in
+            guard let self else { return }
+            do {
+                _ = try self.presetStore.validatedName(field.stringValue, excluding: existing?.id)
+                validation.stringValue = " "; save.isEnabled = true
+            } catch {
+                validation.stringValue = error.localizedDescription; save.isEnabled = false
+            }
+        }
+        validate()
+        let observer = NotificationCenter.default.addObserver(forName: NSControl.textDidChangeNotification, object: field, queue: .main) { _ in validate() }
+        alert.window.initialFirstResponder = field
+        (alert.window.fieldEditor(true, for: field) as? NSTextView)?.allowsUndo = true
+        alert.beginSheetModal(for: window) { [weak self] response in
+            NotificationCenter.default.removeObserver(observer)
+            guard let self, response == .alertFirstButtonReturn else { return }
+            do {
+                if let existing {
+                    try self.presetStore.rename(id: existing.id, name: field.stringValue)
+                    self.selectedPresetID = existing.id
+                } else {
+                    self.selectedPresetID = try self.presetStore.add(name: field.stringValue, layout: layout).id
+                }
+                self.syncPrintPresets()
+            } catch { self.showError(error.localizedDescription) }
+        }
+    }
+
     func label(_ text: String, size: CGFloat = 12, weight: NSFont.Weight = .medium) -> NSTextField {
         let field = NSTextField(labelWithString: text)
         field.font = .systemFont(ofSize: size, weight: weight)
@@ -490,6 +647,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSTextFieldDelegate, N
         controls = [countPresets, countField, countStepper, paperPopup, orientation, arrangement, margins, borderCheckbox, rangeField]
         restoreSettings()
         syncCountPresets()
+        layoutPresetPopup.target = self; layoutPresetPopup.action = #selector(choosePrintPreset)
+        layoutPresetPopup.setAccessibilityLabel(L10n.string("preset.label"))
+        layoutPresetPopup.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
+        syncPrintPresets()
         let countGroup = section(L10n.string("label.pages_per_sheet"), countPresets)
         countGroup.addArrangedSubview(countRow)
         countRow.widthAnchor.constraint(equalTo: countGroup.widthAnchor).isActive = true
@@ -517,7 +678,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSTextFieldDelegate, N
         sourceQueueBox.orientation = .vertical; sourceQueueBox.alignment = .leading; sourceQueueBox.spacing = 8
         for view in [header, sourceList, queueHint] { view.widthAnchor.constraint(equalTo: sourceQueueBox.widthAnchor).isActive = true }
 
-        let layout = group(L10n.string("group.layout"), views: [countGroup,
+        let layout = group(L10n.string("group.layout"), views: [section(L10n.string("preset.label"), layoutPresetPopup), countGroup,
             section(L10n.string("section.paper"), paperPopup),
             section(L10n.string("section.orientation"), orientation), section(L10n.string("section.arrangement"), arrangement)])
         moreSettingsButton.title = L10n.string("settings.more")
@@ -689,22 +850,12 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSTextFieldDelegate, N
     }
     func openPDFs(_ urls: [URL]) {
         do {
-            let incomingURLs = Array(Set(urls.map(\.standardizedFileURL)))
-            let orderedURLs: [URL]
-            if sourceURLs.isEmpty {
-                orderedURLs = incomingURLs.sorted {
-                    $0.lastPathComponent.localizedStandardCompare($1.lastPathComponent) == .orderedAscending
-                }
-            } else {
-                let additions = incomingURLs.filter { !sourceURLs.contains($0) }.sorted {
-                    $0.lastPathComponent.localizedStandardCompare($1.lastPathComponent) == .orderedAscending
-                }
-                orderedURLs = sourceURLs + additions
+            let additions = Set(urls.map(\.standardizedFileURL)).filter { !sourceURLs.contains($0) }.sorted {
+                $0.lastPathComponent.localizedStandardCompare($1.lastPathComponent) == .orderedAscending
             }
-            guard !orderedURLs.isEmpty else { return }
-            var items: [PDFSource] = []
-            let previewDocument = PDFDocument()
-            for url in orderedURLs {
+            guard !additions.isEmpty else { return }
+            var items = sourceItems
+            for url in additions {
                 let data = try Data(contentsOf: url, options: .mappedIfSafe)
                 guard let document = PDFDocument(data: data) else {
                     throw LayoutError.message(L10n.format("error.invalid_pdf", url.lastPathComponent))
@@ -728,22 +879,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSTextFieldDelegate, N
                 items.append(PDFSource(data: data, password: password, name: url.lastPathComponent,
                                        pageCount: document.pageCount, allowsPrinting: document.allowsPrinting,
                                        thumbnail: thumbnail))
-                for pageIndex in 0..<document.pageCount {
-                    guard let page = document.page(at: pageIndex), let copy = page.copy() as? PDFPage else {
-                        throw LayoutError.message(L10n.format("error.read_page", url.lastPathComponent, pageIndex + 1))
-                    }
-                    previewDocument.insert(copy, at: previewDocument.pageCount)
-                }
             }
-            let wasEmpty = sourceItems.isEmpty
-            sourceItems = items; sourceDocument = previewDocument; sourceURLs = orderedURLs
-            if wasEmpty { sidebarItem.isCollapsed = preferences.bool(forKey: "sidebarCollapsed") }
-            updateSourceMetadata()
-            refreshSourceQueue()
-            rangeField.stringValue = ""
-            emptyView.isHidden = true
-            if mode.selectedSegment == 0 { pdfView.document = previewDocument }
-            regenerate()
+            let state = SourceQueueState(items: items, urls: sourceURLs + additions,
+                selectedIndex: sourceItems.count, pageRange: "")
+            replaceSourceQueue(with: state, actionName: L10n.string("undo.add_files"))
         } catch { showError(error.localizedDescription) }
     }
 
@@ -771,9 +910,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSTextFieldDelegate, N
         queueHint.isHidden = queueCollapsed || sourceItems.count < 2
     }
 
-    func makePreviewDocument() throws -> PDFDocument {
+    func makePreviewDocument(sources: [PDFSource]) throws -> PDFDocument {
         let previewDocument = PDFDocument()
-        for source in sourceItems {
+        for source in sources {
             guard let document = PDFDocument(data: source.data) else {
                 throw LayoutError.message(L10n.format("error.read_pdf", source.name))
             }
@@ -790,54 +929,69 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSTextFieldDelegate, N
         return previewDocument
     }
 
-    func applySourceOrderChange() {
+    var sourceQueueState: SourceQueueState {
+        SourceQueueState(items: sourceItems, urls: sourceURLs, selectedIndex: sourceList.selectedIndex,
+            pageRange: rangeField.stringValue)
+    }
+
+    func replaceSourceQueue(with state: SourceQueueState, actionName: String) {
         do {
-            sourceDocument = try makePreviewDocument()
-            updateSourceMetadata()
-            refreshSourceQueue()
-            emptyView.isHidden = !sourceItems.isEmpty
-            if mode.selectedSegment == 0 { pdfView.document = sourceDocument }
-            regenerate()
+            // Prepare everything before changing the visible queue or its undo history.
+            let preview = state.items.isEmpty ? nil : try makePreviewDocument(sources: state.items)
+            window.makeFirstResponder(nil)
+            let previous = sourceQueueState
+            let isReplaying = queueUndoManager.isUndoing || queueUndoManager.isRedoing
+            if !isReplaying { queueUndoManager.beginUndoGrouping() }
+            queueUndoManager.registerUndo(withTarget: self) { target in
+                target.replaceSourceQueue(with: previous, actionName: actionName)
+            }
+            queueUndoManager.setActionName(actionName)
+            if !isReplaying { queueUndoManager.endUndoGrouping() }
+            let wasEmpty = sourceItems.isEmpty
+            sourceItems = state.items; sourceURLs = state.urls; sourceDocument = preview
+            rangeField.stringValue = state.pageRange
+            refreshSourceQueue(selectedIndex: state.selectedIndex)
+            if !sourceItems.isEmpty {
+                if wasEmpty { sidebarItem.isCollapsed = preferences.bool(forKey: "sidebarCollapsed") }
+                updateSourceMetadata()
+                if mode.selectedSegment == 0 { pdfView.document = preview }
+                regenerate()
+                if !sidebarItem.isCollapsed && !queueCollapsed { sourceList.focusSelectedRow() }
+            } else {
+                sourceTitle.stringValue = L10n.string("source.no_pdf")
+                sourceDetail.stringValue = L10n.string("source.local_only")
+                sourceTitle.toolTip = nil
+                displayedPreview = nil; savedPreviewPage = 0; savedPreviewScale = nil
+                sidebarItem.isCollapsed = true
+                pendingRender?.cancel()
+                pdfView.document = nil
+                pageLabel.stringValue = ""
+                window.title = L10n.string("app.name"); window.representedURL = nil
+                invalidateOutput()
+                summary.stringValue = L10n.string("summary.ready")
+                detail.stringValue = L10n.string("detail.default")
+                setStatus("")
+                updateAvailability()
+            }
         } catch { showError(error.localizedDescription) }
     }
 
     func moveSource(from index: Int, to destination: Int) {
         guard sourceItems.indices.contains(index), sourceItems.indices.contains(destination), index != destination else { return }
-        sourceItems.insert(sourceItems.remove(at: index), at: destination)
-        sourceURLs.insert(sourceURLs.remove(at: index), at: destination)
-        applySourceOrderChange()
-        refreshSourceQueue(selectedIndex: destination)
+        var state = sourceQueueState
+        state.items.insert(state.items.remove(at: index), at: destination)
+        state.urls.insert(state.urls.remove(at: index), at: destination)
+        state.selectedIndex = destination
+        replaceSourceQueue(with: state, actionName: L10n.string("undo.reorder_files"))
     }
 
     func removeSource(at index: Int) {
         guard sourceItems.indices.contains(index) else { return }
-        sourceItems.remove(at: index)
-        sourceURLs.remove(at: index)
-        guard !sourceItems.isEmpty else {
-            sourceDocument = nil
-            sourceTitle.stringValue = L10n.string("source.no_pdf")
-            sourceDetail.stringValue = L10n.string("source.local_only")
-            refreshSourceQueue()
-            displayedPreview = nil
-            savedPreviewPage = 0; savedPreviewScale = nil
-            window.makeFirstResponder(nil)
-            sidebarItem.isCollapsed = true
-            pendingRender?.cancel()
-            emptyView.isHidden = false
-            pdfView.document = nil
-            pageLabel.stringValue = ""
-            window.title = L10n.string("app.name")
-            window.representedURL = nil
-            rangeField.stringValue = ""
-            invalidateOutput()
-            summary.stringValue = L10n.string("summary.ready")
-            detail.stringValue = L10n.string("detail.default")
-            setStatus("")
-            updateAvailability()
-            return
-        }
-        applySourceOrderChange()
-        refreshSourceQueue(selectedIndex: min(index, sourceItems.count - 1))
+        var state = sourceQueueState
+        state.items.remove(at: index); state.urls.remove(at: index)
+        state.selectedIndex = min(index, state.items.count - 1)
+        if state.items.isEmpty { state.pageRange = "" }
+        replaceSourceQueue(with: state, actionName: L10n.string("undo.remove_file"))
     }
 
     func readSettings() throws -> PrintSettings {
@@ -855,8 +1009,12 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSTextFieldDelegate, N
     }
     @objc func stepCount() { countField.integerValue = countStepper.integerValue; regenerate() }
     @objc func settingsChanged() { regenerate() }
+    func controlTextDidBeginEditing(_ notification: Notification) {
+        (window.firstResponder as? NSTextView)?.allowsUndo = true
+    }
     func controlTextDidChange(_ notification: Notification) {
         syncCountPresets()
+        syncPrintPresets()
         updateMoreSettingsHint()
         invalidateOutput()
         pendingRender?.cancel()
@@ -880,6 +1038,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSTextFieldDelegate, N
     func regenerate() {
         pendingRender?.cancel()
         syncCountPresets()
+        syncPrintPresets()
         updateMoreSettingsHint()
         invalidateOutput()
         guard !sourceItems.isEmpty else { return }
@@ -953,6 +1112,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSTextFieldDelegate, N
         previewContent.isHidden = !hasSource
         emptyView.isHidden = hasSource
         mode.isEnabled = hasSource
+        layoutPresetPopup.isEnabled = hasSource
         for control in controls { control.isEnabled = hasSource }
         renderingBadge.isHidden = !hasSource || mode.selectedSegment == 0 || (outputDocument != nil && !isRendering)
         updatePageLabel()
