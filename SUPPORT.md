@@ -8,11 +8,13 @@
 ## 基本使用
 
 1. 点击“选择多个 PDF…”或将 PDF 文件拖入窗口。
-2. 设置每面页数、纸张、方向、排列方式和边距。
-3. 在“打印预览”中检查拼版结果。
-4. 点击“打印…”进入 macOS 系统打印窗口，或选择“另存拼版 PDF…”。
+2. 如需只用某份 PDF 的部分页面，点击该文件下方“全部 N 页”，选择“指定页面”，输入 `1,3,5-7` 等原始页码。每份文件可分别选择。
+3. 设置每面页数、纸张、方向、排列方式和边距。
+4. 在“打印预览”中检查拼版结果。
+5. 点击“打印…”进入 macOS 系统打印窗口，或选择“另存拼版 PDF…”。
 
 多份 PDF 会按文件名顺序组成连续页面队列。系统打印窗口中的“每张页数”应保持为 1，因为应用已经完成拼版。
+“原 PDF”视图保留全部原始页；预览、打印与导出只包含各文件选中的页。修改某文件选页后，“更多设置”中的整体页码范围会恢复为全部，撤销可恢复此前状态。源文件不会被修改。
 
 ## 获取帮助
 
@@ -30,11 +32,13 @@
 ## Basic use
 
 1. Click “Select Multiple PDFs…” or drag PDF files into the window.
-2. Set pages per sheet, paper, orientation, arrangement, and margins.
-3. Check the imposed result in “Print Preview”.
-4. Click “Print…” to open the native macOS print dialog, or choose “Export imposed PDF…”.
+2. To use only some pages from a PDF, click “All N pages” under that file, choose “Selected Pages,” and enter original page numbers such as `1,3,5-7`. You can select pages independently for each file.
+3. Set pages per sheet, paper, orientation, arrangement, and margins.
+4. Check the imposed result in “Print Preview”.
+5. Click “Print…” to open the native macOS print dialog, or choose “Export imposed PDF…”.
 
 Multiple PDFs are processed as one continuous page queue in filename order. Keep the system print dialog’s pages-per-sheet setting at 1 because the app has already imposed the pages.
+“Original PDF” keeps every source page visible; the print preview, printout, and export include only selected pages. Changing a file’s selection resets the combined page range under More Settings to All Pages; Undo restores the prior state. Original files are never modified.
 
 ## Get help
 

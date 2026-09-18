@@ -79,6 +79,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSTextFieldDelegate, N
     let spinner = NSProgressIndicator()
     let sourceQueueBox = NSStackView()
     let sourceList = PDFSourceList()
+    var pageSelectionController: PDFPageSelectionController?
     let sourceQueueCount = NSTextField(labelWithString: "")
     let queueDisclosure = NSButton()
     let queueHint = NSTextField(labelWithString: L10n.string("queue.reorder_hint"))
@@ -670,6 +671,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSTextFieldDelegate, N
         sourceList.onRemove = { [weak self] index in self?.removeSource(at: index) }
         sourceList.onMove = { [weak self] from, to in self?.moveSource(from: from, to: to) }
         sourceList.onDropFiles = { [weak self] urls in self?.openPDFs(urls) }
+        sourceList.onChoosePages = { [weak self] index in self?.choosePages(forSourceAt: index) }
         sourceQueueHeightConstraint = sourceList.heightAnchor.constraint(equalToConstant: 116)
         sourceQueueHeightConstraint.isActive = true
         queueHint.font = .systemFont(ofSize: 11)
@@ -687,8 +689,14 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSTextFieldDelegate, N
         moreSettingsButton.target = self; moreSettingsButton.action = #selector(toggleMoreSettings)
         moreSettingsButton.setAccessibilityLabel(L10n.string("settings.more"))
         moreSettingsButton.heightAnchor.constraint(equalToConstant: 28).isActive = true
+        let combinedRange = section(L10n.string("section.page_range"), rangeField)
+        let combinedRangeHint = NSTextField(wrappingLabelWithString: L10n.string("range.selected_hint"))
+        combinedRangeHint.font = .systemFont(ofSize: 11)
+        combinedRangeHint.textColor = .secondaryLabelColor
+        combinedRange.addArrangedSubview(combinedRangeHint)
+        combinedRangeHint.widthAnchor.constraint(equalTo: combinedRange.widthAnchor).isActive = true
         moreSettingsContent.setViews([section(L10n.string("section.margin"), margins), borderCheckbox,
-            section(L10n.string("section.page_range"), rangeField)], in: .top)
+            combinedRange], in: .top)
         moreSettingsContent.orientation = .vertical; moreSettingsContent.alignment = .leading; moreSettingsContent.spacing = 12
         for view in moreSettingsContent.arrangedSubviews { view.widthAnchor.constraint(equalTo: moreSettingsContent.widthAnchor).isActive = true }
         moreSettingsHint.font = .systemFont(ofSize: 11); moreSettingsHint.textColor = .secondaryLabelColor
@@ -904,7 +912,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSTextFieldDelegate, N
 
     func refreshSourceQueue(selectedIndex: Int? = nil) {
         let totalPages = sourceItems.reduce(0) { $0 + $1.pageCount }
-        sourceQueueCount.stringValue = L10n.format("queue.summary", sourceItems.count, totalPages)
+        let selectedPages = sourceItems.reduce(0) { $0 + $1.includedPageCount }
+        sourceQueueCount.stringValue = selectedPages == totalPages
+            ? L10n.format("queue.summary", sourceItems.count, totalPages)
+            : L10n.format("queue.selection_summary", sourceItems.count, selectedPages, totalPages)
         sourceQueueHeightConstraint.constant = min(max(CGFloat(sourceItems.count) * 56 + 16, 72), 184)
         sourceList.update(sources: sourceItems, selectedIndex: selectedIndex)
         queueHint.isHidden = queueCollapsed || sourceItems.count < 2
@@ -994,6 +1005,38 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSTextFieldDelegate, N
         replaceSourceQueue(with: state, actionName: L10n.string("undo.remove_file"))
     }
 
+    func choosePages(forSourceAt index: Int) {
+        guard sourceItems.indices.contains(index), window.attachedSheet == nil else { return }
+        window.makeFirstResponder(nil)
+        let sourceURL = sourceURLs[index]
+        let controller = PDFPageSelectionController(source: sourceItems[index],
+            resetsCombinedRange: !rangeField.stringValue.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty) { [weak self] selection in
+                guard let self, let currentIndex = self.sourceURLs.firstIndex(of: sourceURL) else { return }
+                self.selectPages(selection, forSourceAt: currentIndex)
+            }
+        controller.onDismiss = { [weak self] in self?.pageSelectionController = nil }
+        pageSelectionController = controller
+        controller.present(on: window)
+    }
+
+    func selectPages(_ selection: [Int]?, forSourceAt index: Int) {
+        guard sourceItems.indices.contains(index) else { return }
+        let pageCount = sourceItems[index].pageCount
+        var normalized = selection.map { Array(Set($0)).sorted() }
+        if let indices = normalized {
+            guard !indices.isEmpty, indices.allSatisfy({ (0..<pageCount).contains($0) }) else { return }
+            if indices.count == pageCount { normalized = nil }
+        }
+        guard sourceItems[index].selectedPageIndices != normalized else { return }
+        var state = sourceQueueState
+        state.items[index].selectedPageIndices = normalized
+        state.selectedIndex = index
+        // The combined page numbers have changed. Start with all selected pages;
+        // undo restores both the per-file selection and the previous combined range.
+        state.pageRange = ""
+        replaceSourceQueue(with: state, actionName: L10n.string("undo.select_pages"))
+    }
+
     func readSettings() throws -> PrintSettings {
         guard let n = Int(countField.stringValue.trimmingCharacters(in: .whitespaces)), (1...16).contains(n) else {
             throw LayoutError.message(L10n.string("error.pages_per_sheet"))
@@ -1004,7 +1047,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSTextFieldDelegate, N
         settings.arrangement = arrangement.indexOfSelectedItem
         settings.margin = [CGFloat(10), 5, 15][margins.indexOfSelectedItem] * 72 / 25.4
         settings.showsBorders = borderCheckbox.state == .on
-        settings.pageIndices = try Imposition.pageIndices(rangeField.stringValue, count: sourceDocument?.pageCount ?? 0)
+        let includedCount = sourceItems.reduce(0) { $0 + $1.includedPageCount }
+        settings.pageIndices = try Imposition.pageIndices(rangeField.stringValue, count: includedCount)
         return settings
     }
     @objc func stepCount() { countField.integerValue = countStepper.integerValue; regenerate() }

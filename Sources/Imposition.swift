@@ -8,6 +8,11 @@ struct PDFSource {
     let pageCount: Int
     let allowsPrinting: Bool
     let thumbnail: NSImage?
+    // nil includes every page. Selections use zero-based original PDF page numbers.
+    var selectedPageIndices: [Int]? = nil
+
+    var includedPageIndices: [Int] { selectedPageIndices ?? Array(0..<pageCount) }
+    var includedPageCount: Int { selectedPageIndices?.count ?? pageCount }
 }
 
 struct PrintSettings {
@@ -122,8 +127,10 @@ enum Imposition {
             guard document.allowsPrinting else {
                 throw LayoutError.message(L10n.format("error.print_restricted_file", source.name))
             }
-            for pageIndex in 0..<document.pageCount {
-                guard let page = document.page(at: pageIndex) else {
+            for pageIndex in source.includedPageIndices {
+                if cancelled() { return nil }
+                guard pageIndex >= 0, pageIndex < document.pageCount,
+                      let page = document.page(at: pageIndex) else {
                     throw LayoutError.message(L10n.format("error.read_page", source.name, pageIndex + 1))
                 }
                 pages.append(page)

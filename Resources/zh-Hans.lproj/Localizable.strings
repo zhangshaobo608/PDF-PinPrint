@@ -18,6 +18,12 @@
 "queue.move_up" = "上移 PDF";
 "queue.move_down" = "下移 PDF";
 "queue.remove" = "移除 PDF";
+"queue.choose_pages" = "选择页面…";
+"queue.choose_pages_help" = "选择此 PDF 要使用的原始页面，例如：1,3,5-7。";
+"queue.all_pages" = "全部 %ld 页";
+"queue.selected_pages" = "已选 %ld / %ld 页";
+"queue.selected_restricted" = "%@ · 有打印限制";
+"queue.selection_summary" = "%ld 个 · 已选 %ld / %ld 页";
 
 "orientation.portrait" = "纵向";
 "orientation.landscape" = "横向";
@@ -51,12 +57,13 @@
 "hint.pages_per_sheet" = "PDF 页 / 纸张单面 · 可输入 1–16";
 "label.pages_per_sheet" = "每面页数";
 "accessibility.pages_per_sheet" = "每面 PDF 页数";
-"accessibility.page_range" = "合并顺序中的页码范围";
+"accessibility.page_range" = "已选页面合并后的页码范围";
 "section.paper" = "纸张";
 "section.orientation" = "纸张方向";
 "section.arrangement" = "页内排列";
 "section.margin" = "边距";
-"section.page_range" = "页码范围（合并顺序）";
+"section.page_range" = "整体页码范围";
+"range.selected_hint" = "进一步筛选已选页面合并后的顺序。单个文件选页请点文件下方的页数。";
 
 "empty.title" = "合并 PDF，按需打印";
 "empty.text" = "添加或拖入多份 PDF，每面可放 1–16 页。\n文件仅在本机处理。";
@@ -167,6 +174,7 @@
 "undo.add_files" = "添加 PDF";
 "undo.remove_file" = "移除 PDF";
 "undo.reorder_files" = "文件排序";
+"undo.select_pages" = "选择页面";
 "preset.label" = "打印方案";
 "preset.custom" = "自定义设置";
 "preset.save" = "存储当前设置…";
@@ -187,3 +195,20 @@
 "preset.error.invalid_layout" = "请先填写有效的排版设置。";
 "preset.error.not_found" = "未找到该打印方案。";
 "preset.error.save_failed" = "无法存储打印方案，请重试。";
+
+// Pages selected from an individual PDF
+"selection.title" = "选择页面";
+"selection.total" = "本文件共 %ld 页";
+"selection.all" = "全部页面";
+"selection.custom" = "指定页面";
+"selection.mode" = "选择本文件要使用的页面";
+"selection.range_label" = "本文件原始页码";
+"selection.placeholder" = "例如：1,3,5-7";
+"selection.range_hint" = "按本文件的原始页码选择，多个页码用逗号分隔，连续页码用短横线连接。";
+"selection.count" = "已选 %ld / %ld 页 · 按原文件顺序";
+"selection.effect" = "仅将所选页面用于合并预览、打印和 PDF 导出，原文件保持不变。";
+"selection.effect_reset" = "仅将所选页面用于合并预览、打印和 PDF 导出。更改选页后，整体页码范围将恢复为全部。原文件保持不变。";
+"selection.required" = "请至少输入一个页码，或选择“全部页面”。";
+"selection.empty_document" = "此 PDF 没有页面。";
+"selection.cancel" = "取消";
+"selection.apply" = "应用";

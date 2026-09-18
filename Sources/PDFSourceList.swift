@@ -6,6 +6,7 @@ final class PDFSourceList: NSView, NSTableViewDataSource, NSTableViewDelegate, N
     /// The second index is the final index after removing the source row.
     var onMove: ((Int, Int) -> Void)?
     var onDropFiles: (([URL]) -> Void)?
+    var onChoosePages: ((Int) -> Void)?
 
     var selectedIndex: Int { tableView.selectedRow }
 
@@ -45,8 +46,13 @@ final class PDFSourceList: NSView, NSTableViewDataSource, NSTableViewDelegate, N
         tableView.setDraggingSourceOperationMask([], forLocal: false)
         tableView.onDelete = { [weak self] in self?.removeSelectedRow() }
         tableView.onMove = { [weak self] offset in self?.moveSelectedRow(by: offset) }
+        tableView.onChoosePages = { [weak self] in self?.chooseSelectedPages() }
+        tableView.target = self
+        tableView.doubleAction = #selector(chooseSelectedPages)
 
         let menu = NSMenu()
+        menu.addItem(menuItem("queue.choose_pages", action: #selector(chooseSelectedPages)))
+        menu.addItem(.separator())
         menu.addItem(menuItem("queue.move_up", action: #selector(moveSelectedUp)))
         menu.addItem(menuItem("queue.move_down", action: #selector(moveSelectedDown)))
         menu.addItem(.separator())
@@ -96,6 +102,13 @@ final class PDFSourceList: NSView, NSTableViewDataSource, NSTableViewDelegate, N
             ?? SourceCellView(frame: .zero)
         cell.identifier = Self.cellID
         cell.configure(source: sources[row])
+        cell.onChoosePages = { [weak self, weak cell] in
+            guard let self, let cell else { return }
+            let currentRow = self.tableView.row(for: cell)
+            guard self.sources.indices.contains(currentRow) else { return }
+            self.selectRow(currentRow, scroll: false)
+            self.chooseSelectedPages()
+        }
         cell.onRemove = { [weak self, weak cell] in
             guard let self, let cell else { return }
             let currentRow = self.tableView.row(for: cell)
@@ -178,7 +191,14 @@ final class PDFSourceList: NSView, NSTableViewDataSource, NSTableViewDelegate, N
         if menuItem.action == #selector(moveSelectedUp) { return row > 0 && onMove != nil }
         if menuItem.action == #selector(moveSelectedDown) { return row + 1 < sources.count && onMove != nil }
         if menuItem.action == #selector(removeSelectedRow) { return onRemove != nil }
+        if menuItem.action == #selector(chooseSelectedPages) { return onChoosePages != nil }
         return false
+    }
+
+    @objc private func chooseSelectedPages() {
+        let row = selectedIndex
+        guard sources.indices.contains(row) else { return }
+        onChoosePages?(row)
     }
 
     @objc private func removeSelectedRow() {
@@ -207,11 +227,16 @@ final class PDFSourceList: NSView, NSTableViewDataSource, NSTableViewDelegate, N
 private final class SourceTableView: NSTableView {
     var onDelete: (() -> Void)?
     var onMove: ((Int) -> Void)?
+    var onChoosePages: (() -> Void)?
 
     override func keyDown(with event: NSEvent) {
         let modifiers = event.modifierFlags.intersection([.command, .option, .control, .shift])
         if modifiers.isEmpty && (event.keyCode == 51 || event.keyCode == 117) {
             onDelete?()
+            return
+        }
+        if modifiers.isEmpty && (event.keyCode == 36 || event.keyCode == 76) {
+            onChoosePages?()
             return
         }
         if modifiers == .option && (event.keyCode == 125 || event.keyCode == 126) {
@@ -232,9 +257,10 @@ private final class SourceTableView: NSTableView {
 
 private final class SourceCellView: NSTableCellView {
     var onRemove: (() -> Void)?
+    var onChoosePages: (() -> Void)?
     private let thumbnail = NSImageView()
     private let nameLabel = NSTextField(labelWithString: "")
-    private let detailLabel = NSTextField(labelWithString: "")
+    private let pagesButton = NSButton()
     private let removeButton = NSButton()
     private var hoverTrackingArea: NSTrackingArea?
     private var isHovered = false
@@ -251,13 +277,21 @@ private final class SourceCellView: NSTableCellView {
         nameLabel.font = .systemFont(ofSize: 12, weight: .medium)
         nameLabel.lineBreakMode = .byTruncatingMiddle
         nameLabel.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
-        detailLabel.font = .systemFont(ofSize: 11)
-        detailLabel.lineBreakMode = .byTruncatingTail
-        detailLabel.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
+        pagesButton.font = .systemFont(ofSize: 11)
+        pagesButton.isBordered = false
+        pagesButton.alignment = .left
+        pagesButton.image = NSImage(systemSymbolName: "chevron.down", accessibilityDescription: nil)
+        pagesButton.imagePosition = .imageTrailing
+        pagesButton.symbolConfiguration = NSImage.SymbolConfiguration(pointSize: 8, weight: .medium)
+        pagesButton.lineBreakMode = .byTruncatingTail
+        pagesButton.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
+        pagesButton.target = self
+        pagesButton.action = #selector(choosePages)
+        pagesButton.heightAnchor.constraint(equalToConstant: 20).isActive = true
         textField = nameLabel
         imageView = thumbnail
 
-        let text = NSStackView(views: [nameLabel, detailLabel])
+        let text = NSStackView(views: [nameLabel, pagesButton])
         text.translatesAutoresizingMaskIntoConstraints = false
         text.orientation = .vertical
         text.alignment = .leading
@@ -294,7 +328,7 @@ private final class SourceCellView: NSTableCellView {
             text.trailingAnchor.constraint(equalTo: removeButton.leadingAnchor, constant: -6),
             text.centerYAnchor.constraint(equalTo: centerYAnchor),
             nameLabel.widthAnchor.constraint(equalTo: text.widthAnchor),
-            detailLabel.widthAnchor.constraint(equalTo: text.widthAnchor)
+            pagesButton.widthAnchor.constraint(equalTo: text.widthAnchor)
         ])
     }
 
@@ -329,11 +363,16 @@ private final class SourceCellView: NSTableCellView {
     func configure(source: PDFSource) {
         thumbnail.image = source.thumbnail ?? NSImage(systemSymbolName: "doc", accessibilityDescription: nil)
         nameLabel.stringValue = source.name
-        let detailKey = source.allowsPrinting ? "queue.ready" : "queue.print_restricted"
-        detailLabel.stringValue = L10n.format(detailKey, source.pageCount)
+        let pageSummary = source.selectedPageIndices == nil
+            ? L10n.format("queue.all_pages", source.pageCount)
+            : L10n.format("queue.selected_pages", source.includedPageCount, source.pageCount)
+        pagesButton.title = source.allowsPrinting ? pageSummary
+            : L10n.format("queue.selected_restricted", pageSummary)
+        pagesButton.toolTip = L10n.string("queue.choose_pages_help")
+        pagesButton.setAccessibilityLabel("\(L10n.string("queue.choose_pages")): \(source.name), \(pagesButton.title)")
         allowsPrinting = source.allowsPrinting
         updateAppearance()
-        toolTip = "\(source.name)\n\(detailLabel.stringValue)"
+        toolTip = "\(source.name)\n\(pagesButton.title)"
         removeButton.setAccessibilityLabel("\(L10n.string("queue.remove")): \(source.name)")
     }
 
@@ -341,11 +380,12 @@ private final class SourceCellView: NSTableCellView {
         let isSelected = backgroundStyle == .emphasized
         // Keep the system row highlight and ensure its contents retain contrast.
         nameLabel.textColor = isSelected ? .alternateSelectedControlTextColor : .labelColor
-        detailLabel.textColor = isSelected ? .alternateSelectedControlTextColor
-            : (allowsPrinting ? .secondaryLabelColor : .systemOrange)
+        pagesButton.contentTintColor = isSelected ? .alternateSelectedControlTextColor
+            : (allowsPrinting ? .controlAccentColor : .systemOrange)
         removeButton.contentTintColor = isSelected ? .alternateSelectedControlTextColor
             : (isHovered ? .labelColor : .secondaryLabelColor)
     }
 
     @objc private func remove() { onRemove?() }
+    @objc private func choosePages() { onChoosePages?() }
 }
