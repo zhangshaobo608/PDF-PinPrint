@@ -1,0 +1,47 @@
+{
+  "appId": "6810637581",
+  "platform": "macOS",
+  "version": "1.4.1",
+  "build": "18",
+  "bundleId": "com.songningning.pdfpinprint",
+  "submittedAtLocal": "2026-09-22 09:49 Asia/Shanghai",
+  "submissionId": "3677db39-1a5b-42e3-9fe0-57588a72b5f3",
+  "status": "正在等待审核",
+  "releaseMode": "automaticAfterApproval",
+  "rollout": "immediateAllUsers",
+  "archive": "/Users/shaobo/Documents/Codex/2026-09-10/p-d-f/work/archives.noindex/PDFPinPrint-1.4.1-build18-team.xcarchive",
+  "package": "/Users/shaobo/Documents/Codex/2026-09-10/p-d-f/work/AppStoreExport-1.4.1-build18/PDF Merge & Print.pkg",
+  "packageSha256": "1d64237d0c68e1d592e6d6eadc9fb8dd6c4265b9f1b0d540558958eff88cce82",
+  "localizations": {
+    "zh-Hans": {
+      "name": "PDF合并打印-PDF阅读器 PDF打印 PDF转换 OCR",
+      "subtitle": "多份PDF选页合并打印",
+      "metadataFile": "AppStore/metadata-zh-Hans.md",
+      "keywords": "PDF,合并,打印,阅读器,选页,多页打印,三页一张,五页一张,批量,拼版,页面布局,预览,导出,离线,A4,A3,Letter,发票,合同,讲义,试卷"
+    },
+    "en-US": {
+      "name": "PDF Merge & Print - PDF Reader",
+      "subtitle": "Merge PDFs, Pick Pages, Print",
+      "metadataFile": "AppStore/metadata-en-US.md",
+      "keywords": "pdf,merge,print,reader,select,3-up,5-up,n-up,batch,preview,export,offline,impose,A4,A3,Letter"
+    }
+  },
+  "screenshotOrder": [
+    "01-hero-angled.png",
+    "02-page-selection-flat.png",
+    "03-n-up-flat.png",
+    "04-merge-queue-flat.png",
+    "05-preview-print-flat.png"
+  ],
+  "submissionEvidence": {
+    "versionStatus": "1.4.1 正在等待审核",
+    "confirmation": "已提交 1 个项目",
+    "automaticReleaseSelected": true,
+    "immediateFullRolloutSelected": true,
+    "localesVerified": [
+      "zh-Hans",
+      "en-US"
+    ],
+    "screenshotsPerLocale": 5
+  }
+}

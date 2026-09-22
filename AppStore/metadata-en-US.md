@@ -3,21 +3,21 @@
 ## App information
 
 - Platform: macOS
-- Name: PDF Merge & Print
-- Subtitle: Merge PDFs, Print 1–16/Sheet
+- Name: PDF Merge & Print - PDF Reader
+- Subtitle: Merge PDFs, Pick Pages, Print
 - Localization: English (U.S.), en-US
 - Bundle ID: `com.songningning.pdfpinprint`
 - SKU: `pdfpinprint-macos`
 - Primary category: Utilities
 - Age rating: 4+
-- Version: 1.4.0
-- Build: 17
+- Version: 1.4.1
+- Build: 18
 - Price: Free
 - Copyright: 2026 ningning song
 
 ## Promotional text
 
-Choose pages from each PDF, then merge, preview, print, or export. Use 1–16 pages per sheet with undo and local processing.
+Choose pages from each PDF, then merge, preview, print, or export 1–16 pages per sheet on your Mac.
 
 ## Description
 
@@ -58,7 +58,7 @@ All PDF processing stays on your Mac. No account, network connection, file uploa
 
 ## Keywords
 
-pdf,pages,range,3-up,5-up,n-up,batch,impose,preview,invoice,contract,handout,worksheet,offline,sort
+pdf,merge,print,reader,select,3-up,5-up,n-up,batch,preview,export,offline,impose,A4,A3,Letter
 
 ## URLs
 
@@ -78,14 +78,13 @@ The app does not implement or use non-exempt encryption. `ITSAppUsesNonExemptEnc
 
 ## What's New
 
-- Choose pages independently from each PDF with original ranges such as 1,3,5-7.
-- Selected pages flow in file order into print preview, printing, and export; originals stay unchanged.
-- Undo and redo page selection, file reordering, and removal. Combined page ranges now explain their relationship to per-file selections.
-- Refined the file list page-count status and the localized page-selection flow.
+- Updated English and Simplified Chinese product pages.
+- Clearer workflow for merging PDFs, selecting pages per file, printing 1–16 pages per sheet, and exporting.
+- Local-only processing with no account or network connection.
 
 ## Review notes
 
-Version 1.4.0, build 17. This native macOS PDF merge and multiple-pages-per-sheet utility is for office users, students, and teachers. It arranges local PDFs in order, with 1–16 pages per printed side, and lets each file choose its own pages.
+Version 1.4.1, build 18. This native macOS PDF merge and multiple-pages-per-sheet utility is for office users, students, and teachers. It arranges local PDFs in order, with 1–16 pages per printed side, and lets each file choose its own pages.
 
 No account, login credentials, subscription, in-app purchase, or network connection is required. There is no hosted user-generated content, social functionality, or external content service. Core functionality uses Apple's AppKit, PDFKit, and macOS printing system. There are no third-party SDKs, cloud backends, payment providers, authentication services, or AI services. PDF content is processed locally and no data is collected.
 
@@ -103,6 +102,13 @@ Files selected together are initially added in filename order; users can then re
 
 ## Screenshots
 
-- `AppStore/Screenshots/en-US/01-workspace-1.3.0.jpg` (existing approved screenshot may be reused)
+The App Store Connect order is fixed as follows, with the angled hero first:
+
+1. `AppStore/Screenshots/en-US/01-hero-angled.png`
+2. `AppStore/Screenshots/en-US/02-page-selection-flat.png`
+3. `AppStore/Screenshots/en-US/03-n-up-flat.png`
+4. `AppStore/Screenshots/en-US/04-merge-queue-flat.png`
+5. `AppStore/Screenshots/en-US/05-preview-print-flat.png`
+
 - Size: 1280 × 800
-- Format: JPEG, no alpha channel
+- Format: PNG
