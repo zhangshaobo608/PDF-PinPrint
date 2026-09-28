@@ -266,7 +266,7 @@
 				CODE_SIGN_ENTITLEMENTS = PDFPinPrint.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				DEVELOPMENT_TEAM = 58VJ392754;
-				CURRENT_PROJECT_VERSION = 18;
+				CURRENT_PROJECT_VERSION = 19;
 				ENABLE_APP_SANDBOX = YES;
 				ENABLE_HARDENED_RUNTIME = YES;
 				EXECUTABLE_NAME = PDFPrint;
@@ -276,7 +276,7 @@
 					"$(inherited)",
 					"@executable_path/../Frameworks",
 				);
-				MARKETING_VERSION = 1.4.1;
+				MARKETING_VERSION = 1.4.2;
 				PRODUCT_BUNDLE_IDENTIFIER = com.songningning.pdfpinprint;
 				PRODUCT_NAME = "PDF拼印";
 				SWIFT_EMIT_LOC_STRINGS = YES;
@@ -291,7 +291,7 @@
 				CODE_SIGN_ENTITLEMENTS = PDFPinPrint.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				DEVELOPMENT_TEAM = 58VJ392754;
-				CURRENT_PROJECT_VERSION = 18;
+				CURRENT_PROJECT_VERSION = 19;
 				ENABLE_APP_SANDBOX = YES;
 				ENABLE_HARDENED_RUNTIME = YES;
 				EXECUTABLE_NAME = PDFPrint;
@@ -301,7 +301,7 @@
 					"$(inherited)",
 					"@executable_path/../Frameworks",
 				);
-				MARKETING_VERSION = 1.4.1;
+				MARKETING_VERSION = 1.4.2;
 				PRODUCT_BUNDLE_IDENTIFIER = com.songningning.pdfpinprint;
 				PRODUCT_NAME = "PDF拼印";
 				SWIFT_EMIT_LOC_STRINGS = YES;

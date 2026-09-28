@@ -1,0 +1,39 @@
+{
+  "appId": "6810637581",
+  "platform": "macOS",
+  "version": "1.4.2",
+  "build": "19",
+  "bundleId": "com.songningning.pdfpinprint",
+  "releaseMode": "automaticAfterApproval",
+  "status": "本地准备中",
+  "localizations": {
+    "zh-Hans": {
+      "name": "PDF合并打印 - PDF阅读器",
+      "subtitle": "多份文件选页拼版打印",
+      "metadataFile": "AppStore/metadata-zh-Hans.md",
+      "keywords": "图片,Word,文档,转换,三页一张,五页一张,多页,批量,布局,预览,A4,A3,Letter"
+    },
+    "en-US": {
+      "name": "PDF Merge & Print - Reader",
+      "subtitle": "Merge Files, Pick Pages, Print",
+      "metadataFile": "AppStore/metadata-en-US.md",
+      "keywords": "image,word,document,convert,3-up,5-up,n-up,batch,impose,preview,export,offline,A4,A3,Letter"
+    }
+  },
+  "screenshotOrder": [
+    "01-hero-angled.png",
+    "02-page-selection-flat.png",
+    "03-n-up-flat.png",
+    "04-merge-queue-flat.png",
+    "05-preview-print-flat.png"
+  ],
+  "submissionEvidence": {
+    "versionStatus": "尚未创建 App Store Connect 1.4.2 版本",
+    "automaticReleaseSelected": true,
+    "localizationsVerified": [
+      "zh-Hans",
+      "en-US"
+    ],
+    "screenshotsPerLocale": 5
+  }
+}
