@@ -5,7 +5,12 @@
   "build": "19",
   "bundleId": "com.songningning.pdfpinprint",
   "releaseMode": "automaticAfterApproval",
-  "status": "本地准备中",
+  "rollout": "immediateAllUsers",
+  "statusObservedAtLocal": "2026-09-28 18:15 Asia/Shanghai",
+  "statusAtSubmission": "正在等待审核",
+  "archive": "/Users/shaobo/Documents/Codex/2026-09-10/p-d-f/work/archives.noindex/PDFPinPrint-1.4.2-build19.xcarchive",
+  "package": "/Users/shaobo/Documents/Codex/2026-09-10/p-d-f/work/AppStoreExport-1.4.2-build19/PDF Merge & Print.pkg",
+  "packageSha256": "fd0f1a65dae81ca8cdaa6d185e9d50fc50dd43ef2deb57a4e82bfa5a0096a06c",
   "localizations": {
     "zh-Hans": {
       "name": "PDF合并打印 - PDF阅读器",
@@ -28,8 +33,11 @@
     "05-preview-print-flat.png"
   ],
   "submissionEvidence": {
-    "versionStatus": "尚未创建 App Store Connect 1.4.2 版本",
+    "versionStatus": "1.4.2 正在等待审核",
+    "confirmation": "已提交 1 个项目；草稿提交 (0)",
+    "buildSelected": "1.4.2 (19)",
     "automaticReleaseSelected": true,
+    "immediateFullRolloutSelected": true,
     "localizationsVerified": [
       "zh-Hans",
       "en-US"

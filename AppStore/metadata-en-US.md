@@ -86,7 +86,7 @@ The app does not implement or use non-exempt encryption. `ITSAppUsesNonExemptEnc
 
 Version 1.4.2, build 19. This native macOS PDF merge and multiple-pages-per-sheet utility is for office users, students, and teachers. It imports local PDFs, images, and Word documents, arranges them in order with 1–16 pages per printed side, and lets each file choose its own pages.
 
-No account, login credentials, subscription, in-app purchase, or network connection is required. There is no hosted user-generated content, social functionality, or external content service. Core functionality uses Apple's AppKit, PDFKit, and macOS printing system. There are no third-party SDKs, cloud backends, payment providers, authentication services, or AI services. PDF content is processed locally and no data is collected.
+No account, login credentials, subscription, in-app purchase, or network connection is required. There is no hosted user-generated content, social functionality, or external content service. Core functionality uses Apple's AppKit, PDFKit, CoreText, and macOS printing system. There are no third-party SDKs, cloud backends, payment providers, authentication services, or AI services. File content is processed locally and no data is collected.
 
 Review steps:
 
