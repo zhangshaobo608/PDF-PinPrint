@@ -1,25 +1,25 @@
 "app.name" = "PDF合并打印";
 "app.subtitle" = "每张纸，放你想要的页数。";
 
-"source.no_pdf" = "尚未打开 PDF";
+"source.no_pdf" = "尚未打开文件";
 "source.local_only" = "文件仅在本机处理";
 "source.single_detail" = "共 %ld 页 · 本地处理";
-"source.multiple_title" = "已选择 %ld 个 PDF";
+"source.multiple_title" = "已选择 %ld 个文件";
 "source.multiple_detail" = "共 %ld 页 · 按文件名顺序 · 本地处理";
 "window.single_title" = "%@ — PDF合并打印";
-"window.multiple_title" = "%ld 个 PDF — PDF合并打印";
+"window.multiple_title" = "%ld 个文件 — PDF合并打印";
 "queue.title" = "文件";
-"queue.count" = "%ld 个 PDF";
+"queue.count" = "%ld 个文件";
 "queue.total_pages" = "共 %ld 页";
 "queue.ready" = "%ld 页 · 可打印";
 "queue.print_restricted" = "%ld 页 · 有打印限制";
 "queue.add_more" = "继续添加";
 "queue.reorder_hint" = "拖动排序 · Delete 移除";
-"queue.move_up" = "上移 PDF";
-"queue.move_down" = "下移 PDF";
-"queue.remove" = "移除 PDF";
+"queue.move_up" = "上移文件";
+"queue.move_down" = "下移文件";
+"queue.remove" = "移除文件";
 "queue.choose_pages" = "选择页面…";
-"queue.choose_pages_help" = "选择此 PDF 要使用的原始页面，例如：1,3,5-7。";
+"queue.choose_pages_help" = "选择此文件要使用的原始页面，例如：1,3,5-7。";
 "queue.all_pages" = "全部 %ld 页";
 "queue.selected_pages" = "已选 %ld / %ld 页";
 "queue.selected_restricted" = "%@ · 有打印限制";
@@ -28,7 +28,7 @@
 "orientation.portrait" = "纵向";
 "orientation.landscape" = "横向";
 "border.show" = "显示边框";
-"border.tooltip" = "沿每个 PDF 页面边缘添加细边框，预览、打印及导出均生效。";
+"border.tooltip" = "沿每个页面边缘添加细边框，预览、打印及导出均生效。";
 "mode.original" = "原 PDF";
 "mode.preview" = "打印预览";
 "summary.ready" = "设置好后，即可预览并打印。";
@@ -36,7 +36,7 @@
 
 "button.print" = "打印…";
 "button.export" = "另存拼版 PDF…";
-"button.choose_multiple" = "选择多个 PDF…";
+"button.choose_multiple" = "添加文件…";
 "button.fit" = "适合窗口";
 "button.previous" = "上一页";
 "button.next" = "下一页";
@@ -54,9 +54,9 @@
 "margin.narrow" = "窄 · 5 mm";
 "margin.wide" = "宽 · 15 mm";
 "range.placeholder" = "全部，或 1-6, 8";
-"hint.pages_per_sheet" = "PDF 页 / 纸张单面 · 可输入 1–16";
+"hint.pages_per_sheet" = "每面页数 · 可输入 1–16";
 "label.pages_per_sheet" = "每面页数";
-"accessibility.pages_per_sheet" = "每面 PDF 页数";
+"accessibility.pages_per_sheet" = "每面页数";
 "accessibility.page_range" = "已选页面合并后的页码范围";
 "section.paper" = "纸张";
 "section.orientation" = "纸张方向";
@@ -65,12 +65,17 @@
 "section.page_range" = "整体页码范围";
 "range.selected_hint" = "进一步筛选已选页面合并后的顺序。单个文件选页请点文件下方的页数。";
 
-"empty.title" = "合并 PDF，按需打印";
-"empty.text" = "添加或拖入多份 PDF，每面可放 1–16 页。\n文件仅在本机处理。";
-"open_panel.message" = "可选择多个 PDF，应用会按文件名顺序连续拼版。";
+"empty.title" = "合并文件，按需打印";
+"empty.text" = "添加或拖入 PDF、图片或 Word 文档，每面可放 1–16 页。\n文件仅在本机处理。";
+"open_panel.message" = "可选择 PDF、图片或 Word 文档，应用会按文件名顺序连续拼版。";
 
 "error.title" = "无法完成操作";
 "error.invalid_pdf" = "“%@”不是可读取的 PDF。";
+"error.invalid_document" = "无法将“%@”作为可打印文档打开。";
+"error.read_document" = "无法读取“%@”。";
+"error.convert_document" = "无法将“%@”转换为 PDF，请先另存为 PDF 后重试。";
+"error.image_conversion" = "无法将此图片转换为 PDF。";
+"error.unsupported_document" = "“%@”不是支持的文件类型。";
 "error.read_pdf" = "无法读取“%@”。";
 "error.wrong_password" = "“%@”的密码不正确。";
 "error.empty_pdf" = "“%@”中没有页面。";
@@ -100,16 +105,16 @@
 "status.print_sheets" = "单面打印用 %ld 张纸；双面选项在系统打印窗口中设置。";
 "status.saved" = "已保存：%@";
 
-"export.multiple_name" = "多个PDF";
+"export.multiple_name" = "多个文件";
 "export.filename" = "%@-每面%ld页.pdf";
-"print.multiple_name" = "%ld个PDF";
+"print.multiple_name" = "%ld个文件";
 "print.job_title" = "%@ · 每面%ld页";
 
 "range.all" = "全部";
 "menu.about" = "关于 PDF合并打印";
 "menu.quit" = "退出 PDF合并打印";
 "menu.file" = "文件";
-"menu.choose_pdf" = "选择 PDF…";
+"menu.choose_pdf" = "添加文件…";
 "menu.export_pdf" = "另存拼版 PDF…";
 "menu.print" = "打印…";
 "menu.edit" = "编辑";
@@ -131,7 +136,7 @@
 "menu.zoom" = "缩放";
 "menu.close" = "关闭窗口";
 "toolbar.sidebar" = "显示或隐藏侧栏";
-"toolbar.add" = "添加 PDF…";
+"toolbar.add" = "添加文件…";
 "toolbar.mode" = "预览模式";
 "toolbar.zoom_in" = "放大";
 "toolbar.zoom_out" = "缩小";
@@ -171,8 +176,8 @@
 "menu.redo" = "重做";
 "menu.undo_action" = "撤销%@";
 "menu.redo_action" = "重做%@";
-"undo.add_files" = "添加 PDF";
-"undo.remove_file" = "移除 PDF";
+"undo.add_files" = "添加文件";
+"undo.remove_file" = "移除文件";
 "undo.reorder_files" = "文件排序";
 "undo.select_pages" = "选择页面";
 "preset.label" = "打印方案";

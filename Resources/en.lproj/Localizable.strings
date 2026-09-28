@@ -1,25 +1,25 @@
 "app.name" = "PDF Merge & Print";
 "app.subtitle" = "Put the pages you need on each sheet.";
 
-"source.no_pdf" = "No PDF open";
+"source.no_pdf" = "No document open";
 "source.local_only" = "Files stay on this Mac";
 "source.single_detail" = "%ld pages · processed locally";
-"source.multiple_title" = "%ld PDFs selected";
+"source.multiple_title" = "%ld documents selected";
 "source.multiple_detail" = "%ld pages · filename order · processed locally";
 "window.single_title" = "%@ — PDF Merge & Print";
-"window.multiple_title" = "%ld PDFs — PDF Merge & Print";
+"window.multiple_title" = "%ld documents — PDF Merge & Print";
 "queue.title" = "Files";
-"queue.count" = "%ld PDFs";
+"queue.count" = "%ld documents";
 "queue.total_pages" = "%ld pages total";
 "queue.ready" = "%ld pages · ready";
 "queue.print_restricted" = "%ld pages · print restricted";
 "queue.add_more" = "Add more";
 "queue.reorder_hint" = "Drag to reorder · Delete to remove";
-"queue.move_up" = "Move PDF up";
-"queue.move_down" = "Move PDF down";
-"queue.remove" = "Remove PDF";
+"queue.move_up" = "Move document up";
+"queue.move_down" = "Move document down";
+"queue.remove" = "Remove document";
 "queue.choose_pages" = "Choose Pages…";
-"queue.choose_pages_help" = "Choose original pages from this PDF, for example: 1,3,5-7.";
+"queue.choose_pages_help" = "Choose original pages from this document, for example: 1,3,5-7.";
 "queue.all_pages" = "All %ld pages";
 "queue.selected_pages" = "%ld of %ld pages selected";
 "queue.selected_restricted" = "%@ · print restricted";
@@ -28,7 +28,7 @@
 "orientation.portrait" = "Portrait";
 "orientation.landscape" = "Landscape";
 "border.show" = "Show page borders";
-"border.tooltip" = "Add a thin border around each PDF page in the preview, printout, and export.";
+"border.tooltip" = "Add a thin border around each page in the preview, printout, and export.";
 "mode.original" = "Original PDF";
 "mode.preview" = "Print Preview";
 "summary.ready" = "Configure settings to preview and print.";
@@ -36,7 +36,7 @@
 
 "button.print" = "Print…";
 "button.export" = "Export imposed PDF…";
-"button.choose_multiple" = "Select Multiple PDFs…";
+"button.choose_multiple" = "Add Documents…";
 "button.fit" = "Fit to Window";
 "button.previous" = "Previous Page";
 "button.next" = "Next Page";
@@ -54,9 +54,9 @@
 "margin.narrow" = "Narrow · 5 mm";
 "margin.wide" = "Wide · 15 mm";
 "range.placeholder" = "All, or 1-6, 8";
-"hint.pages_per_sheet" = "PDF pages per sheet · enter 1–16";
+"hint.pages_per_sheet" = "Pages per sheet · enter 1–16";
 "label.pages_per_sheet" = "Pages per sheet";
-"accessibility.pages_per_sheet" = "PDF pages per sheet";
+"accessibility.pages_per_sheet" = "Pages per sheet";
 "accessibility.page_range" = "Page range after merging selected pages";
 "section.paper" = "Paper";
 "section.orientation" = "Orientation";
@@ -65,12 +65,17 @@
 "section.page_range" = "Combined page range";
 "range.selected_hint" = "Further filter the selected pages in merged order. To choose pages from one file, click its page count.";
 
-"empty.title" = "Merge PDFs. Print your way.";
-"empty.text" = "Add or drop PDFs and print 1–16 pages per sheet.\nYour files stay on this Mac.";
-"open_panel.message" = "Select multiple PDFs; the app will impose them in filename order.";
+"empty.title" = "Combine documents. Print your way.";
+"empty.text" = "Add or drop PDFs, images, or Word documents.\nYour files stay on this Mac.";
+"open_panel.message" = "Select PDFs, images, or Word documents; they will be arranged in filename order.";
 
 "error.title" = "Unable to Complete";
 "error.invalid_pdf" = "“%@” is not a readable PDF.";
+"error.invalid_document" = "“%@” could not be opened as a printable document.";
+"error.read_document" = "Unable to read “%@”.";
+"error.convert_document" = "Unable to convert “%@” to PDF. Save it as PDF and try again.";
+"error.image_conversion" = "Unable to convert this image to PDF.";
+"error.unsupported_document" = "“%@” is not a supported document type.";
 "error.read_pdf" = "Unable to read “%@”.";
 "error.wrong_password" = "The password for “%@” is incorrect.";
 "error.empty_pdf" = "“%@” contains no pages.";
@@ -100,16 +105,16 @@
 "status.print_sheets" = "Single-sided printing uses %ld sheets; choose duplex options in the system print dialog.";
 "status.saved" = "Saved: %@";
 
-"export.multiple_name" = "Multiple PDFs";
+"export.multiple_name" = "Multiple Documents";
 "export.filename" = "%@-%ld-pages-per-sheet.pdf";
-"print.multiple_name" = "%ld PDFs";
+"print.multiple_name" = "%ld Documents";
 "print.job_title" = "%@ · %ld pages per sheet";
 
 "range.all" = "All";
 "menu.about" = "About PDF Merge & Print";
 "menu.quit" = "Quit PDF Merge & Print";
 "menu.file" = "File";
-"menu.choose_pdf" = "Select PDFs…";
+"menu.choose_pdf" = "Add Documents…";
 "menu.export_pdf" = "Export Imposed PDF…";
 "menu.print" = "Print…";
 "menu.edit" = "Edit";
@@ -131,7 +136,7 @@
 "menu.zoom" = "Zoom";
 "menu.close" = "Close Window";
 "toolbar.sidebar" = "Show or Hide Sidebar";
-"toolbar.add" = "Add PDFs…";
+"toolbar.add" = "Add Documents…";
 "toolbar.mode" = "Preview Mode";
 "toolbar.zoom_in" = "Zoom In";
 "toolbar.zoom_out" = "Zoom Out";
@@ -171,8 +176,8 @@
 "menu.redo" = "Redo";
 "menu.undo_action" = "Undo %@";
 "menu.redo_action" = "Redo %@";
-"undo.add_files" = "Add PDFs";
-"undo.remove_file" = "Remove PDF";
+"undo.add_files" = "Add Documents";
+"undo.remove_file" = "Remove Document";
 "undo.reorder_files" = "Reorder Files";
 "undo.select_pages" = "Choose Pages";
 "preset.label" = "Print preset";

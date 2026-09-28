@@ -19,13 +19,18 @@ final class DropView: NSView {
         registerForDraggedTypes([.fileURL])
     }
     required init?(coder: NSCoder) { fatalError() }
-    override func draggingEntered(_ sender: NSDraggingInfo) -> NSDragOperation { .copy }
+    override func draggingEntered(_ sender: NSDraggingInfo) -> NSDragOperation {
+        guard let urls = sender.draggingPasteboard.readObjects(forClasses: [NSURL.self],
+            options: [.urlReadingFileURLsOnly: true]) as? [URL],
+              !DocumentImport.supportedURLs(from: urls).isEmpty else { return [] }
+        return .copy
+    }
     override func performDragOperation(_ sender: NSDraggingInfo) -> Bool {
         guard let urls = sender.draggingPasteboard.readObjects(forClasses: [NSURL.self],
             options: [.urlReadingFileURLsOnly: true]) as? [URL] else { return false }
-        let pdfURLs = urls.filter { $0.pathExtension.lowercased() == "pdf" }
-        guard !pdfURLs.isEmpty else { return false }
-        onDrop?(pdfURLs)
+        let supportedURLs = DocumentImport.supportedURLs(from: urls)
+        guard !supportedURLs.isEmpty else { return false }
+        onDrop?(supportedURLs)
         return true
     }
 }
@@ -125,17 +130,15 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSTextFieldDelegate, N
         makeWindow()
         window.makeKeyAndOrderFront(nil)
         NSApp.activate(ignoringOtherApps: true)
-        let argumentURLs = CommandLine.arguments.dropFirst()
-            .filter { $0.lowercased().hasSuffix(".pdf") }
-            .map { URL(fileURLWithPath: $0) }
+        let argumentURLs = DocumentImport.supportedURLs(from: CommandLine.arguments.dropFirst().map(URL.init(fileURLWithPath:)))
         let initialURLs = pendingOpenURLs + argumentURLs
-        if !initialURLs.isEmpty { openPDFs(initialURLs) }
+        if !initialURLs.isEmpty { openDocuments(initialURLs) }
     }
 
     func application(_ sender: NSApplication, openFiles filenames: [String]) {
-        let urls = filenames.filter { $0.lowercased().hasSuffix(".pdf") }.map { URL(fileURLWithPath: $0) }
+        let urls = DocumentImport.supportedURLs(from: filenames.map(URL.init(fileURLWithPath:)))
         if window == nil { pendingOpenURLs.append(contentsOf: urls) }
-        else if !urls.isEmpty { openPDFs(urls) }
+        else if !urls.isEmpty { openDocuments(urls) }
         sender.reply(toOpenOrPrint: .success)
     }
     func applicationShouldTerminateAfterLastWindowClosed(_ sender: NSApplication) -> Bool { true }
@@ -564,7 +567,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSTextFieldDelegate, N
         window.toolbarStyle = .unified
 
         let root = DropView()
-        root.onDrop = { [weak self] urls in self?.openPDFs(urls) }
+        root.onDrop = { [weak self] urls in self?.openDocuments(urls) }
         let sidebar = NSVisualEffectView()
         sidebar.material = .sidebar
         sidebar.blendingMode = .behindWindow
@@ -670,7 +673,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSTextFieldDelegate, N
         let header = NSStackView(views: [queueDisclosure, NSView(), sourceQueueCount])
         sourceList.onRemove = { [weak self] index in self?.removeSource(at: index) }
         sourceList.onMove = { [weak self] from, to in self?.moveSource(from: from, to: to) }
-        sourceList.onDropFiles = { [weak self] urls in self?.openPDFs(urls) }
+        sourceList.onDropFiles = { [weak self] urls in self?.openDocuments(urls) }
         sourceList.onChoosePages = { [weak self] index in self?.choosePages(forSourceAt: index) }
         sourceQueueHeightConstraint = sourceList.heightAnchor.constraint(equalToConstant: 116)
         sourceQueueHeightConstraint.isActive = true
@@ -844,11 +847,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSTextFieldDelegate, N
 
     @objc func openPanel() {
         let panel = NSOpenPanel()
-        panel.allowedContentTypes = [.pdf]
+        panel.allowedContentTypes = DocumentImport.allowedContentTypes
         panel.allowsMultipleSelection = true
         panel.message = L10n.string("open_panel.message")
         panel.beginSheetModal(for: window) { [weak self] response in
-            if response == .OK, !panel.urls.isEmpty { self?.openPDFs(panel.urls) }
+            if response == .OK, !panel.urls.isEmpty { self?.openDocuments(panel.urls) }
         }
     }
     func showError(_ message: String) {
@@ -856,17 +859,17 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSTextFieldDelegate, N
         alert.addButton(withTitle: L10n.string("button.ok"))
         alert.beginSheetModal(for: window)
     }
-    func openPDFs(_ urls: [URL]) {
+    func openDocuments(_ urls: [URL]) {
         do {
-            let additions = Set(urls.map(\.standardizedFileURL)).filter { !sourceURLs.contains($0) }.sorted {
+            let additions = Set(DocumentImport.supportedURLs(from: urls).map(\.standardizedFileURL)).filter { !sourceURLs.contains($0) }.sorted {
                 $0.lastPathComponent.localizedStandardCompare($1.lastPathComponent) == .orderedAscending
             }
             guard !additions.isEmpty else { return }
             var items = sourceItems
             for url in additions {
-                let data = try Data(contentsOf: url, options: .mappedIfSafe)
+                let data = try DocumentImport.pdfData(for: url)
                 guard let document = PDFDocument(data: data) else {
-                    throw LayoutError.message(L10n.format("error.invalid_pdf", url.lastPathComponent))
+                    throw LayoutError.message(L10n.format("error.invalid_document", url.lastPathComponent))
                 }
                 var password: String?
                 if document.isLocked {

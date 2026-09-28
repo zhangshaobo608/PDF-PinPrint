@@ -136,7 +136,7 @@ final class PDFSourceList: NSView, NSTableViewDataSource, NSTableViewDelegate, N
         }
         // A stale or foreign custom row payload must never become an external file drop.
         guard info.draggingPasteboard.types?.contains(Self.rowType) != true,
-              onDropFiles != nil, !pdfURLs(from: info).isEmpty else { return [] }
+              onDropFiles != nil, !documentURLs(from: info).isEmpty else { return [] }
         tableView.setDropRow(-1, dropOperation: .on)
         return .copy
     }
@@ -152,7 +152,7 @@ final class PDFSourceList: NSView, NSTableViewDataSource, NSTableViewDelegate, N
             return true
         }
         guard info.draggingPasteboard.types?.contains(Self.rowType) != true, let onDropFiles else { return false }
-        let urls = pdfURLs(from: info)
+        let urls = documentURLs(from: info)
         guard !urls.isEmpty else { return false }
         onDropFiles(urls)
         return true
@@ -167,10 +167,10 @@ final class PDFSourceList: NSView, NSTableViewDataSource, NSTableViewDelegate, N
         return row
     }
 
-    private func pdfURLs(from info: NSDraggingInfo) -> [URL] {
+    private func documentURLs(from info: NSDraggingInfo) -> [URL] {
         let urls = info.draggingPasteboard.readObjects(forClasses: [NSURL.self],
             options: [.urlReadingFileURLsOnly: true]) as? [URL] ?? []
-        return urls.filter { $0.isFileURL && $0.pathExtension.lowercased() == "pdf" }
+        return DocumentImport.supportedURLs(from: urls)
     }
 
     private func selectRow(_ row: Int, scroll: Bool = true) {

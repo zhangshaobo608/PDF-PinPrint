@@ -18,6 +18,8 @@
 		A00000000000000000000009 /* PDFSourceList.swift in Sources */ = {isa = PBXBuildFile; fileRef = B00000000000000000000016 /* PDFSourceList.swift */; };
 		A00000000000000000000010 /* PrintPresets.swift in Sources */ = {isa = PBXBuildFile; fileRef = B00000000000000000000017 /* PrintPresets.swift */; };
 		A00000000000000000000011 /* PDFPageSelectionController.swift in Sources */ = {isa = PBXBuildFile; fileRef = B00000000000000000000018 /* PDFPageSelectionController.swift */; };
+		A00000000000000000000012 /* DocumentImport.swift in Sources */ = {isa = PBXBuildFile; fileRef = B00000000000000000000019 /* DocumentImport.swift */; };
+		A00000000000000000000013 /* CoreText.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = B00000000000000000000020 /* CoreText.framework */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -37,6 +39,8 @@
 		B00000000000000000000016 /* PDFSourceList.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PDFSourceList.swift; sourceTree = "<group>"; };
 		B00000000000000000000017 /* PrintPresets.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PrintPresets.swift; sourceTree = "<group>"; };
 		B00000000000000000000018 /* PDFPageSelectionController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PDFPageSelectionController.swift; sourceTree = "<group>"; };
+		B00000000000000000000019 /* DocumentImport.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DocumentImport.swift; sourceTree = "<group>"; };
+		B00000000000000000000020 /* CoreText.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = CoreText.framework; path = System/Library/Frameworks/CoreText.framework; sourceTree = SDKROOT; };
 /* End PBXFileReference section */
 
 /* Begin PBXVariantGroup section */
@@ -67,6 +71,7 @@
 			files = (
 				A00000000000000000000004 /* AppKit.framework in Frameworks */,
 				A00000000000000000000005 /* PDFKit.framework in Frameworks */,
+				A00000000000000000000013 /* CoreText.framework in Frameworks */,
 				A00000000000000000000006 /* UniformTypeIdentifiers.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -94,6 +99,7 @@
 				B00000000000000000000016 /* PDFSourceList.swift */,
 				B00000000000000000000017 /* PrintPresets.swift */,
 				B00000000000000000000018 /* PDFPageSelectionController.swift */,
+				B00000000000000000000019 /* DocumentImport.swift */,
 			);
 			path = Sources;
 			sourceTree = "<group>";
@@ -121,6 +127,7 @@
 			children = (
 				B00000000000000000000007 /* AppKit.framework */,
 				B00000000000000000000008 /* PDFKit.framework */,
+				B00000000000000000000020 /* CoreText.framework */,
 				B00000000000000000000009 /* UniformTypeIdentifiers.framework */,
 			);
 			name = Frameworks;
@@ -203,6 +210,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				A00000000000000000000012 /* DocumentImport.swift in Sources */,
 				A00000000000000000000002 /* Imposition.swift in Sources */,
 				A00000000000000000000009 /* PDFSourceList.swift in Sources */,
 				A00000000000000000000010 /* PrintPresets.swift in Sources */,
