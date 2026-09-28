@@ -58,7 +58,7 @@ All file processing stays on your Mac. No account, network connection, file uplo
 
 ## Keywords
 
-image,word,document,convert,3-up,5-up,n-up,batch,impose,preview,export,offline,A4,A3,Letter
+PDF,image,word,document,convert,3-up,5-up,n-up,batch,impose,preview,export,offline,A4,A3,Letter
 
 ## URLs
 

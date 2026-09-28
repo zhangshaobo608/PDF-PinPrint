@@ -8,6 +8,7 @@
   "rollout": "immediateAllUsers",
   "statusObservedAtLocal": "2026-09-28 18:15 Asia/Shanghai",
   "statusAtSubmission": "正在等待审核",
+  "submissionId": "a5463779-ef51-4c70-b5dc-a167b4bece64",
   "archive": "/Users/shaobo/Documents/Codex/2026-09-10/p-d-f/work/archives.noindex/PDFPinPrint-1.4.2-build19.xcarchive",
   "package": "/Users/shaobo/Documents/Codex/2026-09-10/p-d-f/work/AppStoreExport-1.4.2-build19/PDF Merge & Print.pkg",
   "packageSha256": "fd0f1a65dae81ca8cdaa6d185e9d50fc50dd43ef2deb57a4e82bfa5a0096a06c",
@@ -16,13 +17,13 @@
       "name": "PDF合并打印 - PDF阅读器",
       "subtitle": "多份文件选页拼版打印",
       "metadataFile": "AppStore/metadata-zh-Hans.md",
-      "keywords": "图片,Word,文档,转换,三页一张,五页一张,多页,批量,布局,预览,A4,A3,Letter"
+      "keywords": "PDF,图片,Word,文档,转换,三页一张,五页一张,多页,批量,布局,预览,A4,A3,Letter"
     },
     "en-US": {
       "name": "PDF Merge & Print - Reader",
       "subtitle": "Merge Files, Pick Pages, Print",
       "metadataFile": "AppStore/metadata-en-US.md",
-      "keywords": "image,word,document,convert,3-up,5-up,n-up,batch,impose,preview,export,offline,A4,A3,Letter"
+      "keywords": "PDF,image,word,document,convert,3-up,5-up,n-up,batch,impose,preview,export,offline,A4,A3,Letter"
     }
   },
   "screenshotOrder": [
