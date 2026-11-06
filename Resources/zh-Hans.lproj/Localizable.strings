@@ -29,6 +29,8 @@
 "orientation.landscape" = "横向";
 "border.show" = "显示边框";
 "border.tooltip" = "沿每个页面边缘添加细边框，预览、打印及导出均生效。";
+"cut_guides.show" = "显示裁切虚线";
+"cut_guides.tooltip" = "在页面之间的空隙显示裁切参考线，预览、打印及导出均生效。";
 "mode.original" = "原 PDF";
 "mode.preview" = "打印预览";
 "summary.ready" = "设置好后，即可预览并打印。";
@@ -153,7 +155,8 @@
 
 "settings.more" = "更多设置";
 
-"settings.more_hint" = "边距、边框与页码范围";
+"settings.more_hint" = "边距、边框、裁切线与页码范围";
+"settings.cut_guides_on" = " · 裁切线";
 
 "settings.more_summary" = "%ld mm · %@ · 页码：%@";
 

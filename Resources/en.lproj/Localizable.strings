@@ -29,6 +29,8 @@
 "orientation.landscape" = "Landscape";
 "border.show" = "Show page borders";
 "border.tooltip" = "Add a thin border around each page in the preview, printout, and export.";
+"cut_guides.show" = "Show dashed cut guides";
+"cut_guides.tooltip" = "Show cut guides in the gaps between pages in the preview, printout, and export.";
 "mode.original" = "Original PDF";
 "mode.preview" = "Print Preview";
 "summary.ready" = "Configure settings to preview and print.";
@@ -153,7 +155,8 @@
 
 "settings.more" = "More Settings";
 
-"settings.more_hint" = "Margins, borders and page range";
+"settings.more_hint" = "Margins, borders, cut guides and page range";
+"settings.cut_guides_on" = " · Cut guides";
 
 "settings.more_summary" = "%ld mm · %@ · Pages: %@";
 

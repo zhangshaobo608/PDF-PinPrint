@@ -8,6 +8,29 @@ struct PrintLayout: Codable, Equatable {
     var arrangement: Int
     var marginIndex: Int
     var showsBorders: Bool
+    var showsCutGuides: Bool
+
+    init(pagesPerSheet: Int, paperIndex: Int, landscape: Bool, arrangement: Int,
+         marginIndex: Int, showsBorders: Bool, showsCutGuides: Bool) {
+        self.pagesPerSheet = pagesPerSheet
+        self.paperIndex = paperIndex
+        self.landscape = landscape
+        self.arrangement = arrangement
+        self.marginIndex = marginIndex
+        self.showsBorders = showsBorders
+        self.showsCutGuides = showsCutGuides
+    }
+
+    init(from decoder: Decoder) throws {
+        let values = try decoder.container(keyedBy: CodingKeys.self)
+        pagesPerSheet = try values.decode(Int.self, forKey: .pagesPerSheet)
+        paperIndex = try values.decode(Int.self, forKey: .paperIndex)
+        landscape = try values.decode(Bool.self, forKey: .landscape)
+        arrangement = try values.decode(Int.self, forKey: .arrangement)
+        marginIndex = try values.decode(Int.self, forKey: .marginIndex)
+        showsBorders = try values.decode(Bool.self, forKey: .showsBorders)
+        showsCutGuides = try values.decodeIfPresent(Bool.self, forKey: .showsCutGuides) ?? false
+    }
 
     var isValid: Bool {
         (1...16).contains(pagesPerSheet)

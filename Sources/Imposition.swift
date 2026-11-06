@@ -22,6 +22,7 @@ struct PrintSettings {
     var arrangement = 1 // 0 automatic, 1 one column (default), 2 one row
     var margin: CGFloat = 28.3464567
     var showsBorders = false
+    var showsCutGuides = false
     var pageIndices: [Int] = []
 
     var paperName: String { ["A4", "A3", "Letter"][paperIndex] }
@@ -193,6 +194,24 @@ enum Imposition {
                     context.stroke(pageRect.insetBy(dx: 0.25, dy: 0.25))
                     context.restoreGState()
                 }
+            }
+            if settings.showsCutGuides {
+                context.saveGState()
+                context.setStrokeColor(CGColor(gray: 0.45, alpha: 1))
+                context.setLineWidth(0.5)
+                context.setLineDash(phase: 0, lengths: [3, 3])
+                for column in 1..<columns {
+                    let x = settings.margin + CGFloat(column) * cellW + CGFloat(column - 1) * gap + gap / 2
+                    context.move(to: CGPoint(x: x, y: settings.margin))
+                    context.addLine(to: CGPoint(x: x, y: paper.height - settings.margin))
+                }
+                for row in 1..<rows {
+                    let y = paper.height - settings.margin - CGFloat(row) * cellH - CGFloat(row - 1) * gap - gap / 2
+                    context.move(to: CGPoint(x: settings.margin, y: y))
+                    context.addLine(to: CGPoint(x: paper.width - settings.margin, y: y))
+                }
+                context.strokePath()
+                context.restoreGState()
             }
             context.endPDFPage()
         }

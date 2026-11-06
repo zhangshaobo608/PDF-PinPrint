@@ -74,6 +74,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSTextFieldDelegate, N
     let arrangement = NSPopUpButton()
     let margins = NSPopUpButton()
     let borderCheckbox = NSButton(checkboxWithTitle: L10n.string("border.show"), target: nil, action: nil)
+    let cutGuidesCheckbox = NSButton(checkboxWithTitle: L10n.string("cut_guides.show"), target: nil, action: nil)
     let rangeField = NSTextField(string: "")
     let mode = NSSegmentedControl(labels: [L10n.string("mode.original"), L10n.string("mode.preview")], trackingMode: .selectOne, target: nil, action: nil)
     let summary = NSTextField(wrappingLabelWithString: L10n.string("summary.ready"))
@@ -342,13 +343,16 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSTextFieldDelegate, N
     func updateMoreSettingsHint() {
         moreSettingsHint.isHidden = moreSettingsExpanded
         let range = rangeField.stringValue.trimmingCharacters(in: .whitespacesAndNewlines)
-        if margins.indexOfSelectedItem == 0 && borderCheckbox.state == .off && range.isEmpty {
+        if margins.indexOfSelectedItem == 0 && borderCheckbox.state == .off
+            && cutGuidesCheckbox.state == .off && range.isEmpty {
             moreSettingsHint.stringValue = L10n.string("settings.more_hint")
         } else {
             let margin = [10, 5, 15][max(0, min(margins.indexOfSelectedItem, 2))]
-            moreSettingsHint.stringValue = L10n.format("settings.more_summary", margin,
+            let summary = L10n.format("settings.more_summary", margin,
                 L10n.string(borderCheckbox.state == .on ? "settings.borders_on" : "settings.borders_off"),
                 range.isEmpty ? L10n.string("range.all") : range)
+            moreSettingsHint.stringValue = cutGuidesCheckbox.state == .on
+                ? summary + L10n.string("settings.cut_guides_on") : summary
         }
         moreSettingsHint.toolTip = moreSettingsHint.stringValue
     }
@@ -410,19 +414,22 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSTextFieldDelegate, N
         arrangement.selectItem(at: min(max(saved["arrangement"] as? Int ?? 1, 0), 2))
         margins.selectItem(at: min(max(saved["margin"] as? Int ?? 0, 0), 2))
         borderCheckbox.state = saved["borders"] as? Bool == true ? .on : .off
+        cutGuidesCheckbox.state = saved["cutGuides"] as? Bool == true ? .on : .off
     }
 
     func saveSettings() {
         preferences.set(["count": countField.integerValue, "paper": paperPopup.indexOfSelectedItem,
             "landscape": orientation.selectedSegment == 1, "arrangement": arrangement.indexOfSelectedItem,
-            "margin": margins.indexOfSelectedItem, "borders": borderCheckbox.state == .on], forKey: "printSettings")
+            "margin": margins.indexOfSelectedItem, "borders": borderCheckbox.state == .on,
+            "cutGuides": cutGuidesCheckbox.state == .on], forKey: "printSettings")
     }
 
     var currentPrintLayout: PrintLayout? {
         guard let count = Int(countField.stringValue.trimmingCharacters(in: .whitespaces)) else { return nil }
         let layout = PrintLayout(pagesPerSheet: count, paperIndex: paperPopup.indexOfSelectedItem,
             landscape: orientation.selectedSegment == 1, arrangement: arrangement.indexOfSelectedItem,
-            marginIndex: margins.indexOfSelectedItem, showsBorders: borderCheckbox.state == .on)
+            marginIndex: margins.indexOfSelectedItem, showsBorders: borderCheckbox.state == .on,
+            showsCutGuides: cutGuidesCheckbox.state == .on)
         return layout.isValid ? layout : nil
     }
 
@@ -468,6 +475,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSTextFieldDelegate, N
             arrangement.selectItem(at: layout.arrangement)
             margins.selectItem(at: layout.marginIndex)
             borderCheckbox.state = layout.showsBorders ? .on : .off
+            cutGuidesCheckbox.state = layout.showsCutGuides ? .on : .off
             selectedPresetID = identifier
             regenerate()
             return
@@ -642,13 +650,16 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSTextFieldDelegate, N
         rangeField.setAccessibilityLabel(L10n.string("accessibility.page_range"))
         borderCheckbox.toolTip = L10n.string("border.tooltip")
         borderCheckbox.setAccessibilityLabel(L10n.string("border.show"))
+        cutGuidesCheckbox.toolTip = L10n.string("cut_guides.tooltip")
+        cutGuidesCheckbox.setAccessibilityLabel(L10n.string("cut_guides.show"))
         for (control, key) in [(paperPopup, "section.paper"), (arrangement, "section.arrangement"), (margins, "section.margin")] {
             control.setAccessibilityLabel(L10n.string(key))
         }
-        for control in [paperPopup, orientation, arrangement, margins, borderCheckbox] as [NSControl] {
+        for control in [paperPopup, orientation, arrangement, margins, borderCheckbox, cutGuidesCheckbox] as [NSControl] {
             control.target = self; control.action = #selector(settingsChanged)
         }
-        controls = [countPresets, countField, countStepper, paperPopup, orientation, arrangement, margins, borderCheckbox, rangeField]
+        controls = [countPresets, countField, countStepper, paperPopup, orientation, arrangement, margins,
+                    borderCheckbox, cutGuidesCheckbox, rangeField]
         restoreSettings()
         syncCountPresets()
         layoutPresetPopup.target = self; layoutPresetPopup.action = #selector(choosePrintPreset)
@@ -698,7 +709,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSTextFieldDelegate, N
         combinedRangeHint.textColor = .secondaryLabelColor
         combinedRange.addArrangedSubview(combinedRangeHint)
         combinedRangeHint.widthAnchor.constraint(equalTo: combinedRange.widthAnchor).isActive = true
-        moreSettingsContent.setViews([section(L10n.string("section.margin"), margins), borderCheckbox,
+        moreSettingsContent.setViews([section(L10n.string("section.margin"), margins), borderCheckbox, cutGuidesCheckbox,
             combinedRange], in: .top)
         moreSettingsContent.orientation = .vertical; moreSettingsContent.alignment = .leading; moreSettingsContent.spacing = 12
         for view in moreSettingsContent.arrangedSubviews { view.widthAnchor.constraint(equalTo: moreSettingsContent.widthAnchor).isActive = true }
@@ -709,7 +720,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSTextFieldDelegate, N
         moreSettingsContent.widthAnchor.constraint(equalTo: advanced.widthAnchor).isActive = true
         moreSettingsHint.widthAnchor.constraint(equalTo: advanced.widthAnchor).isActive = true
         let savedExpansion = preferences.object(forKey: "moreSettingsExpanded") as? Bool
-        setMoreSettingsExpanded(savedExpansion ?? (margins.indexOfSelectedItem != 0 || borderCheckbox.state == .on))
+        setMoreSettingsExpanded(savedExpansion ?? (margins.indexOfSelectedItem != 0
+            || borderCheckbox.state == .on || cutGuidesCheckbox.state == .on))
         let stack = NSStackView(views: [sourceQueueBox, separator(), layout, separator(), advanced])
         stack.orientation = .vertical; stack.alignment = .leading; stack.spacing = 16
         stack.distribution = .fill; stack.translatesAutoresizingMaskIntoConstraints = false
@@ -919,7 +931,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSTextFieldDelegate, N
         sourceQueueCount.stringValue = selectedPages == totalPages
             ? L10n.format("queue.summary", sourceItems.count, totalPages)
             : L10n.format("queue.selection_summary", sourceItems.count, selectedPages, totalPages)
-        sourceQueueHeightConstraint.constant = min(max(CGFloat(sourceItems.count) * 56 + 16, 72), 184)
+        sourceQueueHeightConstraint.constant = min(max(CGFloat(sourceItems.count) * 56 + 16, 72), 212)
         sourceList.update(sources: sourceItems, selectedIndex: selectedIndex)
         queueHint.isHidden = queueCollapsed || sourceItems.count < 2
     }
@@ -1050,6 +1062,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSTextFieldDelegate, N
         settings.arrangement = arrangement.indexOfSelectedItem
         settings.margin = [CGFloat(10), 5, 15][margins.indexOfSelectedItem] * 72 / 25.4
         settings.showsBorders = borderCheckbox.state == .on
+        settings.showsCutGuides = cutGuidesCheckbox.state == .on
         let includedCount = sourceItems.reduce(0) { $0 + $1.includedPageCount }
         settings.pageIndices = try Imposition.pageIndices(rangeField.stringValue, count: includedCount)
         return settings
