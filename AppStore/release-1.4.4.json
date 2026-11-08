@@ -6,9 +6,10 @@
   "bundleId": "com.songningning.pdfpinprint",
   "releaseMode": "automaticAfterApproval",
   "rollout": "immediateAllUsers",
-  "status": "uploadedAwaitingReviewSubmission",
-  "statusAtSubmission": null,
-  "submissionId": null,
+  "status": "waitingForReview",
+  "statusAtSubmission": "等待审核",
+  "submittedAtLocal": "2026-11-08 19:28 Asia/Shanghai",
+  "submissionId": "3f82ccc8-f8ce-4c4b-a151-2a8cdcbce2bd",
   "archive": "/Users/shaobo/Documents/Codex/2026-09-10/p-d-f/work/archives.noindex/PDFPinPrint-1.4.4-build21.xcarchive",
   "uploadConfirmedAtUTC": "2026-11-08T10:44:52Z",
   "delivery": "xcodebuild direct upload; archive distribution record reports Uploaded to Apple",
@@ -33,11 +34,13 @@
     "04-merge-queue-flat.png",
     "05-preview-print-flat.png"
   ],
-  "preparationEvidence": {
+  "submissionEvidence": {
     "localizationsSaved": ["zh-Hans", "en-US"],
     "reviewNotesVersion": "1.4.4 (21)",
     "automaticReleaseSelected": true,
     "immediateFullRolloutSelected": true,
-    "remaining": "Associate processed build 21 and submit for review; Mac locked before final submission"
+    "buildSelected": "1.4.4 (21)",
+    "confirmation": "已提交 1 个项目",
+    "reviewStatus": "等待审核"
   }
 }
