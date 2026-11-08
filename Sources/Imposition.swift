@@ -200,15 +200,16 @@ enum Imposition {
                 context.setStrokeColor(CGColor(gray: 0.45, alpha: 1))
                 context.setLineWidth(0.5)
                 context.setLineDash(phase: 0, lengths: [3, 3])
+                // Extend guides to the paper edges, independently of content margins.
                 for column in 1..<columns {
                     let x = settings.margin + CGFloat(column) * cellW + CGFloat(column - 1) * gap + gap / 2
-                    context.move(to: CGPoint(x: x, y: settings.margin))
-                    context.addLine(to: CGPoint(x: x, y: paper.height - settings.margin))
+                    context.move(to: CGPoint(x: x, y: 0))
+                    context.addLine(to: CGPoint(x: x, y: paper.height))
                 }
                 for row in 1..<rows {
                     let y = paper.height - settings.margin - CGFloat(row) * cellH - CGFloat(row - 1) * gap - gap / 2
-                    context.move(to: CGPoint(x: settings.margin, y: y))
-                    context.addLine(to: CGPoint(x: paper.width - settings.margin, y: y))
+                    context.move(to: CGPoint(x: 0, y: y))
+                    context.addLine(to: CGPoint(x: paper.width, y: y))
                 }
                 context.strokePath()
                 context.restoreGState()

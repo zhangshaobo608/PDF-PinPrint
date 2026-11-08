@@ -690,9 +690,14 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSTextFieldDelegate, N
         sourceQueueHeightConstraint.isActive = true
         queueHint.font = .systemFont(ofSize: 11)
         queueHint.textColor = .secondaryLabelColor
-        sourceQueueBox.setViews([header, sourceList, queueHint], in: .top)
+        let addFilesButton = button(L10n.string("toolbar.add"), #selector(openPanel))
+        addFilesButton.image = NSImage(systemSymbolName: "plus", accessibilityDescription: nil)
+        addFilesButton.imagePosition = .imageLeading
+        addFilesButton.setAccessibilityLabel(L10n.string("toolbar.add"))
+        addFilesButton.heightAnchor.constraint(equalToConstant: 28).isActive = true
+        sourceQueueBox.setViews([header, sourceList, queueHint, addFilesButton], in: .top)
         sourceQueueBox.orientation = .vertical; sourceQueueBox.alignment = .leading; sourceQueueBox.spacing = 8
-        for view in [header, sourceList, queueHint] { view.widthAnchor.constraint(equalTo: sourceQueueBox.widthAnchor).isActive = true }
+        for view in [header, sourceList, queueHint, addFilesButton] { view.widthAnchor.constraint(equalTo: sourceQueueBox.widthAnchor).isActive = true }
 
         let layout = group(L10n.string("group.layout"), views: [section(L10n.string("preset.label"), layoutPresetPopup), countGroup,
             section(L10n.string("section.paper"), paperPopup),

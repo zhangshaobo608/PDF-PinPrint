@@ -1,0 +1,43 @@
+{
+  "appId": "6810637581",
+  "platform": "macOS",
+  "version": "1.4.4",
+  "build": "21",
+  "bundleId": "com.songningning.pdfpinprint",
+  "releaseMode": "automaticAfterApproval",
+  "rollout": "immediateAllUsers",
+  "status": "uploadedAwaitingReviewSubmission",
+  "statusAtSubmission": null,
+  "submissionId": null,
+  "archive": "/Users/shaobo/Documents/Codex/2026-09-10/p-d-f/work/archives.noindex/PDFPinPrint-1.4.4-build21.xcarchive",
+  "uploadConfirmedAtUTC": "2026-11-08T10:44:52Z",
+  "delivery": "xcodebuild direct upload; archive distribution record reports Uploaded to Apple",
+  "localizations": {
+    "zh-Hans": {
+      "name": "PDF合并打印 - PDF阅读器",
+      "subtitle": "多份文件选页拼版打印",
+      "metadataFile": "AppStore/metadata-zh-Hans.md",
+      "keywords": "PDF,图片,Word,文档,转换,三页一张,五页一张,多页,批量,布局,预览,A4,A3,Letter"
+    },
+    "en-US": {
+      "name": "PDF Merge & Print - Reader",
+      "subtitle": "Merge Files, Pick Pages, Print",
+      "metadataFile": "AppStore/metadata-en-US.md",
+      "keywords": "PDF,image,word,document,convert,3-up,5-up,n-up,batch,impose,preview,export,offline,A4,A3,Letter"
+    }
+  },
+  "screenshotOrder": [
+    "01-hero-angled.png",
+    "02-page-selection-flat.png",
+    "03-n-up-flat.png",
+    "04-merge-queue-flat.png",
+    "05-preview-print-flat.png"
+  ],
+  "preparationEvidence": {
+    "localizationsSaved": ["zh-Hans", "en-US"],
+    "reviewNotesVersion": "1.4.4 (21)",
+    "automaticReleaseSelected": true,
+    "immediateFullRolloutSelected": true,
+    "remaining": "Associate processed build 21 and submit for review; Mac locked before final submission"
+  }
+}

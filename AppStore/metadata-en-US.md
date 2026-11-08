@@ -10,8 +10,8 @@
 - SKU: `pdfpinprint-macos`
 - Primary category: Utilities
 - Age rating: 4+
-- Version: 1.4.3
-- Build: 20
+- Version: 1.4.4
+- Build: 21
 - Price: Free
 - Copyright: 2026 ningning song
 
@@ -78,23 +78,22 @@ The app does not implement or use non-exempt encryption. `ITSAppUsesNonExemptEnc
 
 ## What's New
 
-- The file list now reveals part of the next file, making long lists easier to discover and scroll.
-- Added optional dashed cut guides between imposed pages, visible in preview, print, and export.
-- Print presets now remember the cut-guide setting; existing presets remain compatible.
+- Added an Add Documents button below the file list, so you can easily append PDFs, images, and Word documents even when the list is collapsed.
+- Dashed cut guides now extend to the paper edges for easier trimming. Preview, print, and PDF export use the same guides; printers may clip the outermost unprintable area.
 
 ## Review notes
 
-Version 1.4.3, build 20. This native macOS PDF merge and multiple-pages-per-sheet utility is for office users, students, and teachers. It imports local PDFs, images, and Word documents, arranges them in order with 1–16 pages per printed side, and lets each file choose its own pages.
+Version 1.4.4, build 21. This native macOS PDF merge and multiple-pages-per-sheet utility is for office users, students, and teachers. It imports local PDFs, images, and Word documents, arranges them in order with 1–16 pages per printed side, and lets each file choose its own pages.
 
 No account, login credentials, subscription, in-app purchase, or network connection is required. There is no hosted user-generated content, social functionality, or external content service. Core functionality uses Apple's AppKit, PDFKit, CoreText, and macOS printing system. There are no third-party SDKs, cloud backends, payment providers, authentication services, or AI services. File content is processed locally and no data is collected.
 
 Review steps:
 
-1. Launch on a Mac running macOS 13 or later. Click Add Documents… in the toolbar (Command-O) or Add Documents… on the welcome screen. Choose local PDFs, images, or Word documents. No special sample is required; any ordinary files can be used.
+1. Launch on a Mac running macOS 13 or later. Click Add Documents… in the toolbar (Command-O) or on the welcome screen. Choose local PDFs, images, or Word documents. Use the new Add Documents… button below the Files list to append more files; it remains available when the list is collapsed. No special sample is required; any ordinary files can be used.
 2. Click the page-count status under a file in the Files list, choose Selected Pages, enter 1,3,5-7, and apply. Keep all pages in another file or choose a different range. Confirm the preview follows file order.
 3. Inspect Print Preview with the default 3 pages per sheet. Choose 5 in Layout, or enter another count from 1–16. The combined page range is an additional filter after per-file selection.
 4. Drag files in the Files list to reorder, or select a file and use Option-Up/Down. Press Delete to remove a file from the queue, Command-Z to undo, and Shift-Command-Z to redo. Original files are not deleted. Removing all files can also be undone.
-5. Expand More Settings and enable Show dashed cut guides. Confirm the lines appear between pages in Print Preview and disappear when disabled. Margins, borders, and combined page ranges are also available here.
+5. Expand More Settings and enable Show dashed cut guides. Confirm the lines appear between pages and extend to the paper edges in Print Preview, and disappear when disabled. The same guides are used for printing and export; a printer may clip its unprintable outer edge. Margins, borders, and combined page ranges are also available here.
 6. In Layout, open Print preset and choose Save Current Settings…. Enter a name and save. Change the layout, then choose the saved preset to restore it, including the cut-guide setting. The menu also supports Rename Preset… and Delete Preset…. Presets persist across app restarts and exclude files, page ranges, and system printer settings. Long file lists and the sidebar can be scrolled.
 7. Click Print… (Command-P) to open the native print dialog. The pages are already composed, so keep the system Layout setting at 1 page per sheet. Choose a printer and its supported duplex options, or cancel to return. Click Export PDF… (Command-S) to save the composed PDF at a user-selected location.
 
