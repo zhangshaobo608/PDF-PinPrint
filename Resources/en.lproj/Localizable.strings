@@ -9,6 +9,16 @@
 "window.single_title" = "%@ — PDF Merge & Print";
 "window.multiple_title" = "%ld documents — PDF Merge & Print";
 "queue.title" = "Files";
+"toolbar.inspector" = "Show or Hide Print Settings";
+"workspace.print_settings" = "Print Settings";
+"workspace.page_marks" = "Page Marks";
+"workspace.count_hint" = "Arrange multiple pages on one side of a sheet.";
+"workspace.paper_estimate" = "Estimated Paper";
+"workspace.paper_hint" = "Based on single-sided printing. Choose duplex in the system print dialog.";
+"workspace.sheets" = "%ld sheets";
+"workspace.selected_summary" = "%ld selected / %ld pages";
+"workspace.preview_hint" = "Pages arranged in file order";
+"workspace.range_hint" = "Page range after merging";
 "queue.count" = "%ld documents";
 "queue.total_pages" = "%ld pages total";
 "queue.ready" = "%ld pages · ready";

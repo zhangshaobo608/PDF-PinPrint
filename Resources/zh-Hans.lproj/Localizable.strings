@@ -9,6 +9,16 @@
 "window.single_title" = "%@ — PDF合并打印";
 "window.multiple_title" = "%ld 个文件 — PDF合并打印";
 "queue.title" = "文件";
+"toolbar.inspector" = "显示或隐藏打印设置";
+"workspace.print_settings" = "打印设置";
+"workspace.page_marks" = "页面标记";
+"workspace.count_hint" = "将多个页面排在一张纸的单面。";
+"workspace.paper_estimate" = "预计用纸";
+"workspace.paper_hint" = "按单面打印计算。双面选项在系统打印面板中设置。";
+"workspace.sheets" = "%ld 张";
+"workspace.selected_summary" = "已选 %ld 页 / 共 %ld 页";
+"workspace.preview_hint" = "按文件顺序连续排版";
+"workspace.range_hint" = "合并后的整体页码范围";
 "queue.count" = "%ld 个文件";
 "queue.total_pages" = "共 %ld 页";
 "queue.ready" = "%ld 页 · 可打印";

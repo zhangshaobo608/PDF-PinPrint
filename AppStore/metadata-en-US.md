@@ -10,14 +10,14 @@
 - SKU: `pdfpinprint-macos`
 - Primary category: Utilities
 - Age rating: 4+
-- Version: 1.4.4
-- Build: 21
+- Version: 1.5.0
+- Build: 22
 - Price: Free
 - Copyright: 2026 ningning song
 
 ## Promotional text
 
-Choose pages from PDFs, images, and Word documents, then merge, preview, print, or export 1–16 pages per sheet on your Mac.
+A new Mac workspace for PDFs, images, and Word: organize files, preview pages, and adjust print settings side by side. Merge, print, or export 1–16 pages per sheet.
 
 ## Description
 
@@ -38,8 +38,10 @@ Features:
 - Save named print presets that remain available after restarting the app
 - Undo file changes with Command-Z and redo with Shift-Command-Z
 - Use a native file list with drag reordering, keyboard controls, and a context menu
-- Collapse the file list, spot the next file peeking into a long list, resize or hide the sidebar, and scroll settings in smaller windows
-- Switch between Original PDF and Print Preview, navigate thumbnails, zoom, or fit to the window
+- Organize files, preview pages, and adjust print settings in a three-column workspace, with independently scrolling files and settings
+- Keep Add Documents… at the bottom of the file sidebar; resize or hide either side panel, with print settings collapsing automatically in narrow windows
+- Toggle page borders and dashed cut guides directly, and see an estimate of single-sided paper use
+- Switch between Original PDF and Print Preview, navigate thumbnails, zoom, or fit to the window; select a file in Original PDF mode to jump to its first page
 - Use the native macOS print dialog for printer and supported duplex settings
 - Export an imposed PDF while preserving vector content
 - Use English or Simplified Chinese based on your system language, on Apple silicon or Intel Macs
@@ -48,7 +50,7 @@ Workflow:
 
 1. Click Add Documents… or drop PDFs, images, or Word documents into the window.
 2. Check the Files list and drag to reorder. Use Command-Z to undo a file change.
-3. Set pages per sheet, paper, orientation, and arrangement in Layout. Find margins, borders, cut guides, and page ranges in More Settings.
+3. Use Print Settings on the right to adjust pages per sheet, paper, orientation, arrangement, and margins. Toggle borders or cut guides directly; find the combined page range in More Settings.
 4. To reuse a layout, choose Save Current Settings… from the Print preset menu.
 5. Check Print Preview, then choose Print… or Export PDF….
 
@@ -78,24 +80,28 @@ The app does not implement or use non-exempt encryption. `ITSAppUsesNonExemptEnc
 
 ## What's New
 
-- Added an Add Documents button below the file list, so you can easily append PDFs, images, and Word documents even when the list is collapsed.
-- Dashed cut guides now extend to the paper edges for easier trimming. Preview, print, and PDF export use the same guides; printers may clip the outermost unprintable area.
+- A redesigned native Mac workspace gives files, previews, and print settings their own columns.
+- Scroll long file lists independently, with Add Documents… always available at the bottom.
+- Compact print settings put borders and cut guides within reach and show estimated single-sided paper use.
+- Show or hide either side panel independently. Print settings collapse automatically in narrow windows to make room for the preview.
+- Select a file in Original PDF mode to jump to its first page.
 
 ## Review notes
 
-Version 1.4.4, build 21. This native macOS PDF merge and multiple-pages-per-sheet utility is for office users, students, and teachers. It imports local PDFs, images, and Word documents, arranges them in order with 1–16 pages per printed side, and lets each file choose its own pages.
+Version 1.5.0, build 22. This native macOS PDF merge and multiple-pages-per-sheet utility is for office users, students, and teachers. It imports local PDFs, images, and Word documents, arranges them in order with 1–16 pages per printed side, and lets each file choose its own pages. This version introduces files on the left, a central preview, and print settings on the right.
 
 No account, login credentials, subscription, in-app purchase, or network connection is required. There is no hosted user-generated content, social functionality, or external content service. Core functionality uses Apple's AppKit, PDFKit, CoreText, and macOS printing system. There are no third-party SDKs, cloud backends, payment providers, authentication services, or AI services. File content is processed locally and no data is collected.
 
 Review steps:
 
-1. Launch on a Mac running macOS 13 or later. Click Add Documents… in the toolbar (Command-O) or on the welcome screen. Choose local PDFs, images, or Word documents. Use the new Add Documents… button below the Files list to append more files; it remains available when the list is collapsed. No special sample is required; any ordinary files can be used.
-2. Click the page-count status under a file in the Files list, choose Selected Pages, enter 1,3,5-7, and apply. Keep all pages in another file or choose a different range. Confirm the preview follows file order.
-3. Inspect Print Preview with the default 3 pages per sheet. Choose 5 in Layout, or enter another count from 1–16. The combined page range is an additional filter after per-file selection.
+1. Launch on a Mac running macOS 13 or later. Click Add Documents… at the bottom of the file sidebar or on the welcome screen, or press Command-O. Choose local PDFs, images, or Word documents. The bottom button can append more files. No special sample is required; any ordinary files can be used.
+2. Click the page-count status under a file in the Files list, choose Selected Pages, enter 1,3,5-7, and apply. Keep all pages in another file or choose a different range. Confirm the preview follows file order. Switch to Original PDF and select a file to jump to its first page.
+3. Inspect the central Print Preview with the default 3 pages per sheet. Choose 5 in Print Settings on the right, or enter another count from 1–16. The bottom of the inspector shows estimated single-sided paper use. The combined page range in More Settings is an additional filter after per-file selection.
 4. Drag files in the Files list to reorder, or select a file and use Option-Up/Down. Press Delete to remove a file from the queue, Command-Z to undo, and Shift-Command-Z to redo. Original files are not deleted. Removing all files can also be undone.
-5. Expand More Settings and enable Show dashed cut guides. Confirm the lines appear between pages and extend to the paper edges in Print Preview, and disappear when disabled. The same guides are used for printing and export; a printer may clip its unprintable outer edge. Margins, borders, and combined page ranges are also available here.
-6. In Layout, open Print preset and choose Save Current Settings…. Enter a name and save. Change the layout, then choose the saved preset to restore it, including the cut-guide setting. The menu also supports Rename Preset… and Delete Preset…. Presets persist across app restarts and exclude files, page ranges, and system printer settings. Long file lists and the sidebar can be scrolled.
+5. Enable Show dashed cut guides directly under Page Marks in Print Settings. Confirm the lines appear between pages and extend to the paper edges in Print Preview, and disappear when disabled. The same guides are used for printing and export; a printer may clip its unprintable outer edge. Borders can also be toggled directly; margins are in the same inspector.
+6. Open Print preset on the right and choose Save Current Settings…. Enter a name and save. Change the layout, then choose the saved preset to restore it, including the cut-guide setting. The menu also supports Rename Preset… and Delete Preset…. Presets persist across app restarts and exclude files, page ranges, and system printer settings.
 7. Click Print… (Command-P) to open the native print dialog. The pages are already composed, so keep the system Layout setting at 1 page per sheet. Choose a printer and its supported duplex options, or cancel to return. Click Export PDF… (Command-S) to save the composed PDF at a user-selected location.
+8. Add enough files to scroll the file list and confirm its bottom Add Documents… button stays visible. Files and settings scroll independently. Use the left and right sidebar controls in the toolbar to show or hide either panel. Option-Command-I toggles Print Settings; Option-Command-S toggles Files. Narrowing the window automatically collapses Print Settings, which can be reopened from the toolbar.
 
 Files selected together are initially added in filename order; users can then reorder them. The app does not create a temporary merged file on disk. Functionality is consistent across all regions; the interface uses English or Simplified Chinese according to the system language. The app does not operate in a regulated industry or supply protected third-party content. Users select their own local files.
 

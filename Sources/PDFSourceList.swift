@@ -7,6 +7,8 @@ final class PDFSourceList: NSView, NSTableViewDataSource, NSTableViewDelegate, N
     var onMove: ((Int, Int) -> Void)?
     var onDropFiles: (([URL]) -> Void)?
     var onChoosePages: ((Int) -> Void)?
+    /// User navigation only; reloading or restoring a queue does not emit a selection.
+    var onSelectionChange: ((Int) -> Void)?
 
     var selectedIndex: Int { tableView.selectedRow }
 
@@ -14,6 +16,7 @@ final class PDFSourceList: NSView, NSTableViewDataSource, NSTableViewDelegate, N
     private let scrollView = NSScrollView()
     private var sources: [PDFSource] = []
     private var contentRevision = 0
+    private var isRestoringSelection = false
     private static let rowType = NSPasteboard.PasteboardType("com.songningning.pdfpinprint.source-row")
     private static let columnID = NSUserInterfaceItemIdentifier("source")
     private static let cellID = NSUserInterfaceItemIdentifier("source-cell")
@@ -27,7 +30,7 @@ final class PDFSourceList: NSView, NSTableViewDataSource, NSTableViewDelegate, N
         column.minWidth = 140
         tableView.addTableColumn(column)
         tableView.headerView = nil
-        tableView.rowHeight = 54
+        tableView.rowHeight = 66
         tableView.intercellSpacing = NSSize(width: 0, height: 2)
         tableView.columnAutoresizingStyle = .uniformColumnAutoresizingStyle
         tableView.allowsMultipleSelection = false
@@ -78,6 +81,8 @@ final class PDFSourceList: NSView, NSTableViewDataSource, NSTableViewDelegate, N
     required init?(coder: NSCoder) { fatalError("init(coder:) has not been implemented") }
 
     func update(sources: [PDFSource], selectedIndex: Int? = nil) {
+        isRestoringSelection = true
+        defer { isRestoringSelection = false }
         let requestedSelection = selectedIndex ?? tableView.selectedRow
         self.sources = sources
         contentRevision += 1
@@ -102,6 +107,7 @@ final class PDFSourceList: NSView, NSTableViewDataSource, NSTableViewDelegate, N
             ?? SourceCellView(frame: .zero)
         cell.identifier = Self.cellID
         cell.configure(source: sources[row])
+        cell.isRowSelected = tableView.isRowSelected(row)
         cell.onChoosePages = { [weak self, weak cell] in
             guard let self, let cell else { return }
             let currentRow = self.tableView.row(for: cell)
@@ -117,6 +123,19 @@ final class PDFSourceList: NSView, NSTableViewDataSource, NSTableViewDelegate, N
             self.removeSelectedRow()
         }
         return cell
+    }
+
+    func tableView(_ tableView: NSTableView, rowViewForRow row: Int) -> NSTableRowView? {
+        SourceRowView()
+    }
+
+    func tableViewSelectionDidChange(_ notification: Notification) {
+        for row in 0..<tableView.numberOfRows {
+            (tableView.view(atColumn: 0, row: row, makeIfNecessary: false) as? SourceCellView)?
+                .isRowSelected = tableView.isRowSelected(row)
+        }
+        guard !isRestoringSelection, sources.indices.contains(tableView.selectedRow) else { return }
+        onSelectionChange?(tableView.selectedRow)
     }
 
     func tableView(_ tableView: NSTableView, pasteboardWriterForRow row: Int) -> NSPasteboardWriting? {
@@ -175,6 +194,9 @@ final class PDFSourceList: NSView, NSTableViewDataSource, NSTableViewDelegate, N
 
     private func selectRow(_ row: Int, scroll: Bool = true) {
         guard sources.indices.contains(row) else { return }
+        let wasRestoring = isRestoringSelection
+        isRestoringSelection = true
+        defer { isRestoringSelection = wasRestoring }
         tableView.selectRowIndexes(IndexSet(integer: row), byExtendingSelection: false)
         if scroll { tableView.scrollRowToVisible(row) }
     }
@@ -224,6 +246,17 @@ final class PDFSourceList: NSView, NSTableViewDataSource, NSTableViewDelegate, N
     }
 }
 
+private final class SourceRowView: NSTableRowView {
+    // A quiet selection lets filenames retain their normal contrast in either appearance.
+    override var interiorBackgroundStyle: NSView.BackgroundStyle { .normal }
+
+    override func drawSelection(in dirtyRect: NSRect) {
+        guard selectionHighlightStyle != .none else { return }
+        NSColor.controlAccentColor.withAlphaComponent(isEmphasized ? 0.16 : 0.09).setFill()
+        NSBezierPath(roundedRect: bounds.insetBy(dx: 5, dy: 1), xRadius: 8, yRadius: 8).fill()
+    }
+}
+
 private final class SourceTableView: NSTableView {
     var onDelete: (() -> Void)?
     var onMove: ((Int) -> Void)?
@@ -255,16 +288,36 @@ private final class SourceTableView: NSTableView {
     }
 }
 
+private final class SourceActionButton: NSButton {
+    var onFocusChange: (() -> Void)?
+    private(set) var hasKeyboardFocus = false
+
+    override func becomeFirstResponder() -> Bool {
+        let accepted = super.becomeFirstResponder()
+        if accepted { hasKeyboardFocus = true; onFocusChange?() }
+        return accepted
+    }
+
+    override func resignFirstResponder() -> Bool {
+        let accepted = super.resignFirstResponder()
+        if accepted { hasKeyboardFocus = false; onFocusChange?() }
+        return accepted
+    }
+}
+
 private final class SourceCellView: NSTableCellView {
     var onRemove: (() -> Void)?
     var onChoosePages: (() -> Void)?
     private let thumbnail = NSImageView()
     private let nameLabel = NSTextField(labelWithString: "")
     private let pagesButton = NSButton()
-    private let removeButton = NSButton()
+    private let removeButton = SourceActionButton()
     private var hoverTrackingArea: NSTrackingArea?
     private var isHovered = false
     private var allowsPrinting = true
+    var isRowSelected = false {
+        didSet { updateAppearance() }
+    }
 
     override var backgroundStyle: NSView.BackgroundStyle {
         didSet { updateAppearance() }
@@ -274,6 +327,12 @@ private final class SourceCellView: NSTableCellView {
         super.init(frame: frame)
         thumbnail.imageScaling = .scaleProportionallyUpOrDown
         thumbnail.setAccessibilityElement(false)
+        thumbnail.wantsLayer = true
+        thumbnail.layer?.cornerRadius = 2
+        thumbnail.layer?.shadowColor = NSColor.black.cgColor
+        thumbnail.layer?.shadowOpacity = 0.1
+        thumbnail.layer?.shadowRadius = 1.5
+        thumbnail.layer?.shadowOffset = NSSize(width: 0, height: -1)
         nameLabel.font = .systemFont(ofSize: 12, weight: .medium)
         nameLabel.lineBreakMode = .byTruncatingMiddle
         nameLabel.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
@@ -304,11 +363,13 @@ private final class SourceCellView: NSTableCellView {
         removeButton.imagePosition = .imageOnly
         removeButton.isBordered = false
         removeButton.bezelStyle = .regularSquare
+        removeButton.symbolConfiguration = NSImage.SymbolConfiguration(pointSize: 10, weight: .regular)
         removeButton.contentTintColor = .secondaryLabelColor
         removeButton.toolTip = removeLabel
         removeButton.target = self
         removeButton.action = #selector(remove)
         removeButton.setAccessibilityLabel(removeLabel)
+        removeButton.onFocusChange = { [weak self] in self?.updateAppearance() }
 
         // Anchor both ends so short filenames never pull the remove action inward.
         for view in [thumbnail, text, removeButton] {
@@ -316,16 +377,16 @@ private final class SourceCellView: NSTableCellView {
             addSubview(view)
         }
         NSLayoutConstraint.activate([
-            thumbnail.widthAnchor.constraint(equalToConstant: 28),
-            thumbnail.heightAnchor.constraint(equalToConstant: 38),
-            thumbnail.leadingAnchor.constraint(equalTo: leadingAnchor, constant: 6),
+            thumbnail.widthAnchor.constraint(equalToConstant: 32),
+            thumbnail.heightAnchor.constraint(equalToConstant: 42),
+            thumbnail.leadingAnchor.constraint(equalTo: leadingAnchor, constant: 10),
             thumbnail.centerYAnchor.constraint(equalTo: centerYAnchor),
-            removeButton.widthAnchor.constraint(equalToConstant: 28),
-            removeButton.heightAnchor.constraint(equalToConstant: 28),
-            removeButton.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -4),
+            removeButton.widthAnchor.constraint(equalToConstant: 22),
+            removeButton.heightAnchor.constraint(equalToConstant: 24),
+            removeButton.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -7),
             removeButton.centerYAnchor.constraint(equalTo: centerYAnchor),
-            text.leadingAnchor.constraint(equalTo: thumbnail.trailingAnchor, constant: 8),
-            text.trailingAnchor.constraint(equalTo: removeButton.leadingAnchor, constant: -6),
+            text.leadingAnchor.constraint(equalTo: thumbnail.trailingAnchor, constant: 11),
+            text.trailingAnchor.constraint(equalTo: removeButton.leadingAnchor, constant: -4),
             text.centerYAnchor.constraint(equalTo: centerYAnchor),
             nameLabel.widthAnchor.constraint(equalTo: text.widthAnchor),
             pagesButton.widthAnchor.constraint(equalTo: text.widthAnchor)
@@ -377,13 +438,14 @@ private final class SourceCellView: NSTableCellView {
     }
 
     private func updateAppearance() {
-        let isSelected = backgroundStyle == .emphasized
-        // Keep the system row highlight and ensure its contents retain contrast.
-        nameLabel.textColor = isSelected ? .alternateSelectedControlTextColor : .labelColor
-        pagesButton.contentTintColor = isSelected ? .alternateSelectedControlTextColor
-            : (allowsPrinting ? .controlAccentColor : .systemOrange)
-        removeButton.contentTintColor = isSelected ? .alternateSelectedControlTextColor
-            : (isHovered ? .labelColor : .secondaryLabelColor)
+        nameLabel.textColor = .labelColor
+        pagesButton.contentTintColor = !allowsPrinting ? .systemOrange
+            : (isRowSelected || isHovered ? .controlAccentColor : .secondaryLabelColor)
+        removeButton.contentTintColor = .secondaryLabelColor
+        // The selected row always exposes its action, including keyboard navigation.
+        // Keep the control in the accessibility tree when visually quiet; Delete and
+        // the native context menu remain available for every row as well.
+        removeButton.alphaValue = isHovered || isRowSelected || removeButton.hasKeyboardFocus ? 1 : 0.001
     }
 
     @objc private func remove() { onRemove?() }

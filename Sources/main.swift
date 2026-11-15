@@ -46,7 +46,7 @@ struct SourceQueueState {
     var pageRange: String
 }
 
-final class AppDelegate: NSObject, NSApplicationDelegate, NSTextFieldDelegate, NSMenuItemValidation, NSToolbarDelegate, NSToolbarItemValidation {
+final class AppDelegate: NSObject, NSApplicationDelegate, NSTextFieldDelegate, NSMenuItemValidation, NSToolbarDelegate, NSToolbarItemValidation, NSWindowDelegate {
     var window: NSWindow!
     var appIcon: NSImage?
     let pdfView = PDFView()
@@ -83,15 +83,18 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSTextFieldDelegate, N
     let pageLabel = NSTextField(labelWithString: "")
     let emptyView = NSStackView()
     let spinner = NSProgressIndicator()
-    let sourceQueueBox = NSStackView()
     let sourceList = PDFSourceList()
     var pageSelectionController: PDFPageSelectionController?
     let sourceQueueCount = NSTextField(labelWithString: "")
     let queueDisclosure = NSButton()
     let queueHint = NSTextField(labelWithString: L10n.string("queue.reorder_hint"))
-    var sourceQueueHeightConstraint: NSLayoutConstraint!
     let splitController = NSSplitViewController()
     var sidebarItem: NSSplitViewItem!
+    var inspectorItem: NSSplitViewItem!
+    var inspectorAutomaticallyCollapsed = false
+    let queueSummary = NSTextField(labelWithString: "")
+    let paperEstimate = NSTextField(labelWithString: "—")
+    let previewContext = NSTextField(labelWithString: "")
     let previewContent = NSView()
     let renderingBadge = NSVisualEffectView()
     let renderingLabel = NSTextField(labelWithString: "")
@@ -182,6 +185,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSTextFieldDelegate, N
         let viewMenu = NSMenu(title: L10n.string("menu.view"))
         let sidebarCommand = viewMenu.addItem(withTitle: L10n.string("toolbar.sidebar"), action: #selector(toggleSidebar), keyEquivalent: "s")
         sidebarCommand.keyEquivalentModifierMask = [.command, .option]; sidebarCommand.target = self
+        let inspectorCommand = viewMenu.addItem(withTitle: L10n.string("toolbar.inspector"), action: #selector(toggleInspector), keyEquivalent: "i")
+        inspectorCommand.keyEquivalentModifierMask = [.command, .option]; inspectorCommand.target = self
         viewMenu.addItem(.separator())
         for (key, action, shortcut) in [("mode.original", #selector(showOriginal), "1"), ("mode.preview", #selector(showPrintPreview), "2"),
                                        ("toolbar.zoom_in", #selector(zoomIn), "+"), ("toolbar.zoom_out", #selector(zoomOut), "-"),
@@ -223,6 +228,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSTextFieldDelegate, N
         if item.action == #selector(showOriginal) { item.state = mode.selectedSegment == 0 ? .on : .off }
         if item.action == #selector(showPrintPreview) { item.state = mode.selectedSegment == 1 ? .on : .off }
         if item.action == #selector(toggleSidebar) { item.state = sidebarItem?.isCollapsed == false ? .on : .off }
+        if item.action == #selector(toggleInspector) { item.state = inspectorItem?.isCollapsed == false ? .on : .off }
         return canPerform(item.action)
     }
 
@@ -257,9 +263,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSTextFieldDelegate, N
     }
 
     func toolbarDefaultItemIdentifiers(_ toolbar: NSToolbar) -> [NSToolbarItem.Identifier] {
-        [NSToolbarItem.Identifier("sidebar"), NSToolbarItem.Identifier("add"), .flexibleSpace,
+        [NSToolbarItem.Identifier("sidebar"), NSToolbarItem.Identifier("identity"), .flexibleSpace,
          NSToolbarItem.Identifier("mode"), .flexibleSpace, NSToolbarItem.Identifier("zoomOut"),
-         NSToolbarItem.Identifier("zoomIn"), NSToolbarItem.Identifier("fit"), .space, NSToolbarItem.Identifier("export"), NSToolbarItem.Identifier("print")]
+         NSToolbarItem.Identifier("fit"), NSToolbarItem.Identifier("zoomIn"), .space,
+         NSToolbarItem.Identifier("export"), NSToolbarItem.Identifier("print"), NSToolbarItem.Identifier("inspector")]
     }
 
     func toolbarAllowedItemIdentifiers(_ toolbar: NSToolbar) -> [NSToolbarItem.Identifier] {
@@ -268,6 +275,15 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSTextFieldDelegate, N
 
     func toolbar(_ toolbar: NSToolbar, itemForItemIdentifier identifier: NSToolbarItem.Identifier, willBeInsertedIntoToolbar flag: Bool) -> NSToolbarItem? {
         let item = NSToolbarItem(itemIdentifier: identifier)
+        if identifier.rawValue == "identity" {
+            let title = label(L10n.string("app.name"), size: 12, weight: .semibold)
+            let identity = verticalStack([title], spacing: 0)
+            identity.widthAnchor.constraint(equalToConstant: 155).isActive = true
+            identity.heightAnchor.constraint(equalToConstant: 22).isActive = true
+            item.view = identity; item.label = L10n.string("app.name")
+            item.visibilityPriority = .low
+            return item
+        }
         if identifier.rawValue == "mode" {
             item.view = mode; item.label = L10n.string("toolbar.mode")
             let menu = NSMenu()
@@ -282,7 +298,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSTextFieldDelegate, N
             printButton.title = L10n.string("button.print")
             printButton.image = NSImage(systemSymbolName: "printer", accessibilityDescription: nil)
             printButton.imagePosition = .imageLeading
-            printButton.bezelStyle = .texturedRounded
+            printButton.bezelStyle = .rounded
+            printButton.bezelColor = .controlAccentColor
+            printButton.contentTintColor = .white
             printButton.font = .systemFont(ofSize: 13, weight: .medium)
             printButton.target = self; printButton.action = #selector(printPDF)
             printButton.setAccessibilityLabel(L10n.string("button.print"))
@@ -298,6 +316,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSTextFieldDelegate, N
         }
         let config: (String, String, Selector)
         switch identifier.rawValue {
+        case "inspector": config = ("toolbar.inspector", "sidebar.right", #selector(toggleInspector))
         case "sidebar": config = ("toolbar.sidebar", "sidebar.left", #selector(toggleSidebar))
         case "add": config = ("toolbar.add", "doc.badge.plus", #selector(openPanel))
         case "zoomOut": config = ("toolbar.zoom_out", "minus.magnifyingglass", #selector(zoomOut))
@@ -318,13 +337,44 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSTextFieldDelegate, N
     @objc func toggleSidebar() {
         sidebarItem.isCollapsed.toggle()
         preferences.set(sidebarItem.isCollapsed, forKey: "sidebarCollapsed")
+        windowDidResize(Notification(name: NSWindow.didResizeNotification))
     }
+    @objc func toggleInspector() {
+        inspectorAutomaticallyCollapsed = false
+        // Keep settings usable at the minimum window width by making room first.
+        if inspectorItem.isCollapsed && window.frame.width < 900 && !sidebarItem.isCollapsed {
+            sidebarItem.isCollapsed = true
+        }
+        inspectorItem.isCollapsed.toggle()
+        preferences.set(inspectorItem.isCollapsed, forKey: "inspectorCollapsed")
+        window.toolbar?.validateVisibleItems()
+    }
+
+    func windowDidResize(_ notification: Notification) {
+        guard inspectorItem != nil, sidebarItem != nil else { return }
+        let compact = window.frame.width < 1040 && !sidebarItem.isCollapsed
+        if compact && !inspectorItem.isCollapsed {
+            inspectorAutomaticallyCollapsed = true
+            inspectorItem.isCollapsed = true
+        } else if !compact && inspectorAutomaticallyCollapsed {
+            inspectorAutomaticallyCollapsed = false
+            inspectorItem.isCollapsed = false
+        }
+    }
+
     @objc func toggleQueue() {
         queueCollapsed.toggle(); sourceList.isHidden = queueCollapsed
-        queueHint.isHidden = queueCollapsed || sourceItems.count < 2
         queueDisclosure.image = NSImage(systemSymbolName: queueCollapsed ? "chevron.right" : "chevron.down", accessibilityDescription: nil)
         queueDisclosure.setAccessibilityValue(L10n.string(queueCollapsed ? "queue.collapsed" : "queue.expanded"))
     }
+
+    func sourceSelectionChanged(_ index: Int) {
+        guard mode.selectedSegment == 0, sourceItems.indices.contains(index), let document = sourceDocument else { return }
+        let offset = sourceItems.prefix(index).reduce(0) { $0 + $1.pageCount }
+        if let page = document.page(at: offset) { pdfView.go(to: page) }
+        previewContext.stringValue = sourceItems[index].name
+    }
+
     @objc func toggleMoreSettings() {
         setMoreSettingsExpanded(!moreSettingsExpanded)
         preferences.set(moreSettingsExpanded, forKey: "moreSettingsExpanded")
@@ -343,17 +393,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSTextFieldDelegate, N
     func updateMoreSettingsHint() {
         moreSettingsHint.isHidden = moreSettingsExpanded
         let range = rangeField.stringValue.trimmingCharacters(in: .whitespacesAndNewlines)
-        if margins.indexOfSelectedItem == 0 && borderCheckbox.state == .off
-            && cutGuidesCheckbox.state == .off && range.isEmpty {
-            moreSettingsHint.stringValue = L10n.string("settings.more_hint")
-        } else {
-            let margin = [10, 5, 15][max(0, min(margins.indexOfSelectedItem, 2))]
-            let summary = L10n.format("settings.more_summary", margin,
-                L10n.string(borderCheckbox.state == .on ? "settings.borders_on" : "settings.borders_off"),
-                range.isEmpty ? L10n.string("range.all") : range)
-            moreSettingsHint.stringValue = cutGuidesCheckbox.state == .on
-                ? summary + L10n.string("settings.cut_guides_on") : summary
-        }
+        moreSettingsHint.stringValue = range.isEmpty ? L10n.string("workspace.range_hint") : range
         moreSettingsHint.toolTip = moreSettingsHint.stringValue
     }
 
@@ -556,196 +596,222 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSTextFieldDelegate, N
         return button
     }
     func section(_ title: String, _ control: NSView) -> NSStackView {
-        let fieldLabel = label(title, size: 12, weight: .regular)
+        let fieldLabel = label(title, size: 11, weight: .regular)
         fieldLabel.textColor = .secondaryLabelColor
         let stack = NSStackView(views: [fieldLabel, control])
         stack.orientation = .vertical
         stack.alignment = .leading
-        stack.spacing = 8
+        stack.spacing = 7
         control.widthAnchor.constraint(equalTo: stack.widthAnchor).isActive = true
         return stack
     }
 
     func makeWindow() {
-        window = NSWindow(contentRect: NSRect(x: 0, y: 0, width: 1120, height: 780),
+        window = NSWindow(contentRect: NSRect(x: 0, y: 0, width: 1280, height: 820),
                           styleMask: [.titled, .closable, .miniaturizable, .resizable], backing: .buffered, defer: false)
         window.title = L10n.string("app.name")
-        window.minSize = NSSize(width: 720, height: 520)
-        window.center()
-        window.toolbarStyle = .unified
-
+        window.minSize = NSSize(width: 760, height: 560)
+        window.center(); window.toolbarStyle = .unifiedCompact
+        window.titleVisibility = .hidden
         let root = DropView()
         root.onDrop = { [weak self] urls in self?.openDocuments(urls) }
         let sidebar = NSVisualEffectView()
-        sidebar.material = .sidebar
-        sidebar.blendingMode = .behindWindow
-        let sidebarController = NSViewController()
-        sidebarController.view = sidebar
+        sidebar.material = .sidebar; sidebar.blendingMode = .behindWindow
+        let sidebarController = NSViewController(); sidebarController.view = sidebar
         sidebarItem = NSSplitViewItem(sidebarWithViewController: sidebarController)
-        sidebarItem.minimumThickness = 280
-        sidebarItem.maximumThickness = 380
+        sidebarItem.minimumThickness = 220; sidebarItem.maximumThickness = 300
         sidebarItem.canCollapse = true
         sidebarItem.collapseBehavior = .preferResizingSiblingsWithFixedSplitView
-        let rightController = NSViewController()
-        rightController.view = root
-        let rightItem = NSSplitViewItem(viewController: rightController)
-        rightItem.minimumThickness = 360
+        let previewController = NSViewController(); previewController.view = root
+        let previewItem = NSSplitViewItem(viewController: previewController)
+        previewItem.minimumThickness = 320
+        let inspector = NSVisualEffectView()
+        inspector.material = .windowBackground; inspector.blendingMode = .withinWindow
+        let inspectorController = NSViewController(); inspectorController.view = inspector
+        inspectorItem = NSSplitViewItem(viewController: inspectorController)
+        inspectorItem.minimumThickness = 260; inspectorItem.maximumThickness = 310
+        inspectorItem.canCollapse = true
+        inspectorItem.collapseBehavior = .preferResizingSiblingsWithFixedSplitView
         splitController.addSplitViewItem(sidebarItem)
-        splitController.addSplitViewItem(rightItem)
-        splitController.splitView.autosaveName = "PDFMergePrint.Sidebar"
+        splitController.addSplitViewItem(previewItem)
+        splitController.addSplitViewItem(inspectorItem)
+        splitController.splitView.dividerStyle = .thin
+        splitController.splitView.autosaveName = "PDFMergePrint.WorkspaceV2"
         window.contentViewController = splitController
-        sidebarItem.isCollapsed = true
         buildSidebar(in: sidebar)
+        buildInspector(in: inspector)
         buildPreview(in: root)
         makeToolbar()
-        window.setFrameAutosaveName("PDFMergePrint.MainWindow")
-        if !window.setFrameUsingName("PDFMergePrint.MainWindow") {
-            window.setContentSize(NSSize(width: 1120, height: 780))
-            window.center()
+        window.setFrameAutosaveName("PDFMergePrint.WorkspaceV2")
+        if !window.setFrameUsingName("PDFMergePrint.WorkspaceV2") {
+            window.setContentSize(NSSize(width: 1280, height: 820)); window.center()
+            splitController.splitView.setPosition(248, ofDividerAt: 0)
+            splitController.splitView.setPosition(1019, ofDividerAt: 1)
         }
+        sidebarItem.isCollapsed = preferences.bool(forKey: "sidebarCollapsed")
+        inspectorItem.isCollapsed = preferences.bool(forKey: "inspectorCollapsed")
+        window.delegate = self
+        windowDidResize(Notification(name: NSWindow.didResizeNotification))
+        refreshSourceQueue()
         updateAvailability()
     }
 
-    func group(_ title: String, views: [NSView]) -> NSStackView {
-        let heading = label(title, size: 13, weight: .semibold)
-        let stack = NSStackView(views: [heading] + views)
-        stack.orientation = .vertical
-        stack.alignment = .leading
-        stack.spacing = 12
-        stack.setCustomSpacing(16, after: heading)
+    func verticalStack(_ views: [NSView], spacing: CGFloat = 12) -> NSStackView {
+        let stack = NSStackView(views: views)
+        stack.orientation = .vertical; stack.alignment = .leading; stack.spacing = spacing
+        stack.translatesAutoresizingMaskIntoConstraints = false
         for view in views { view.widthAnchor.constraint(equalTo: stack.widthAnchor).isActive = true }
         return stack
     }
 
+    func settingsRow(_ key: String, _ control: NSControl) -> NSStackView {
+        let title = label(L10n.string(key), size: 12, weight: .regular)
+        title.setContentCompressionResistancePriority(.required, for: .horizontal)
+        control.controlSize = .small; control.font = .systemFont(ofSize: 11)
+        control.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
+        let row = NSStackView(views: [title, NSView(), control]); row.spacing = 8
+        row.heightAnchor.constraint(greaterThanOrEqualToConstant: 29).isActive = true
+        control.widthAnchor.constraint(lessThanOrEqualTo: row.widthAnchor, multiplier: 0.66).isActive = true
+        return row
+    }
+
     func buildSidebar(in sidebar: NSView) {
-        countField.font = .monospacedDigitSystemFont(ofSize: 15, weight: .medium)
-        countField.alignment = .center
-        countField.delegate = self
+        queueDisclosure.title = L10n.string("queue.title")
+        queueDisclosure.image = NSImage(systemSymbolName: "chevron.down", accessibilityDescription: nil)
+        queueDisclosure.imagePosition = .imageLeading; queueDisclosure.isBordered = false
+        queueDisclosure.font = .systemFont(ofSize: 12, weight: .semibold)
+        queueDisclosure.target = self; queueDisclosure.action = #selector(toggleQueue)
+        queueDisclosure.setAccessibilityLabel(L10n.string("queue.toggle"))
+        sourceQueueCount.font = .systemFont(ofSize: 10); sourceQueueCount.textColor = .secondaryLabelColor
+        sourceQueueCount.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
+        let header = NSStackView(views: [queueDisclosure, NSView(), sourceQueueCount]); header.spacing = 8
+        header.translatesAutoresizingMaskIntoConstraints = false
+        sourceList.onRemove = { [weak self] in self?.removeSource(at: $0) }
+        sourceList.onMove = { [weak self] in self?.moveSource(from: $0, to: $1) }
+        sourceList.onDropFiles = { [weak self] in self?.openDocuments($0) }
+        sourceList.onChoosePages = { [weak self] in self?.choosePages(forSourceAt: $0) }
+        sourceList.onSelectionChange = { [weak self] in self?.sourceSelectionChanged($0) }
+        queueSummary.font = .systemFont(ofSize: 10); queueSummary.textColor = .secondaryLabelColor
+        queueSummary.lineBreakMode = .byTruncatingTail
+        queueHint.font = .systemFont(ofSize: 10); queueHint.textColor = .secondaryLabelColor
+        queueHint.alignment = .center
+        let add = button(L10n.string("toolbar.add"), #selector(openPanel))
+        add.image = NSImage(systemSymbolName: "plus", accessibilityDescription: nil); add.imagePosition = .imageLeading
+        add.font = .systemFont(ofSize: 12); add.heightAnchor.constraint(equalToConstant: 30).isActive = true
+        let footer = verticalStack([queueSummary, separator(), add, queueHint], spacing: 12)
+        for view in [header, sourceList, footer] { sidebar.addSubview(view) }
+        NSLayoutConstraint.activate([
+            header.leadingAnchor.constraint(equalTo: sidebar.leadingAnchor, constant: 16),
+            header.trailingAnchor.constraint(equalTo: sidebar.trailingAnchor, constant: -16),
+            header.topAnchor.constraint(equalTo: sidebar.topAnchor, constant: 16),
+            header.heightAnchor.constraint(equalToConstant: 28),
+            sourceList.leadingAnchor.constraint(equalTo: sidebar.leadingAnchor, constant: 6),
+            sourceList.trailingAnchor.constraint(equalTo: sidebar.trailingAnchor, constant: -6),
+            sourceList.topAnchor.constraint(equalTo: header.bottomAnchor, constant: 10),
+            sourceList.bottomAnchor.constraint(equalTo: footer.topAnchor, constant: -12),
+            footer.leadingAnchor.constraint(equalTo: sidebar.leadingAnchor, constant: 16),
+            footer.trailingAnchor.constraint(equalTo: sidebar.trailingAnchor, constant: -16),
+            footer.bottomAnchor.constraint(equalTo: sidebar.bottomAnchor, constant: -16)
+        ])
+    }
+
+    func buildInspector(in inspector: NSView) {
+        countField.font = .monospacedDigitSystemFont(ofSize: 12, weight: .medium)
+        countField.alignment = .center; countField.delegate = self
         countField.setAccessibilityLabel(L10n.string("accessibility.pages_per_sheet"))
-        countField.heightAnchor.constraint(equalToConstant: 28).isActive = true
-        countField.widthAnchor.constraint(equalToConstant: 56).isActive = true
+        countField.widthAnchor.constraint(equalToConstant: 48).isActive = true
         countStepper.minValue = 1; countStepper.maxValue = 16; countStepper.increment = 1
-        countStepper.target = self; countStepper.action = #selector(stepCount)
+        countStepper.controlSize = .small; countStepper.target = self; countStepper.action = #selector(stepCount)
         countStepper.setAccessibilityLabel(L10n.string("accessibility.pages_per_sheet"))
-        let customLabel = label(L10n.string("count.custom"), size: 11, weight: .regular)
-        customLabel.textColor = .secondaryLabelColor
-        let countRow = NSStackView(views: [customLabel, NSView(), countField, countStepper])
-        countRow.spacing = 8
+        let customTitle = label(L10n.string("count.custom"), size: 11, weight: .regular)
+        customTitle.textColor = .secondaryLabelColor
+        let countRow = NSStackView(views: [customTitle, NSView(), countField, countStepper]); countRow.spacing = 6
         countPresets.target = self; countPresets.action = #selector(chooseCountPreset)
-        countPresets.segmentDistribution = .fillEqually
-        countPresets.segmentStyle = .rounded
-        countPresets.font = .monospacedDigitSystemFont(ofSize: 13, weight: .medium)
-        countPresets.heightAnchor.constraint(equalToConstant: 28).isActive = true
+        countPresets.segmentDistribution = .fillEqually; countPresets.segmentStyle = .rounded
+        countPresets.font = .monospacedDigitSystemFont(ofSize: 12, weight: .medium)
+        countPresets.controlSize = .small; countPresets.heightAnchor.constraint(equalToConstant: 27).isActive = true
         countPresets.setAccessibilityLabel(L10n.string("count.presets"))
         for (index, value) in presetCounts.enumerated() {
             countPresets.setToolTip(L10n.format("count.preset_hint", value), forSegment: index)
         }
         paperPopup.addItems(withTitles: [L10n.string("paper.a4"), L10n.string("paper.a3"), L10n.string("paper.letter")])
-        orientation.segmentDistribution = .fillEqually
-        orientation.segmentStyle = .rounded
+        orientation.segmentDistribution = .fillEqually; orientation.segmentStyle = .rounded; orientation.controlSize = .small
+        orientation.font = .systemFont(ofSize: 11)
+        orientation.setAccessibilityLabel(L10n.string("section.orientation"))
         arrangement.addItems(withTitles: [L10n.string("arrangement.auto"), L10n.string("arrangement.vertical"), L10n.string("arrangement.horizontal")])
         margins.addItems(withTitles: [L10n.string("margin.standard"), L10n.string("margin.narrow"), L10n.string("margin.wide")])
-        rangeField.placeholderString = L10n.string("range.placeholder")
-        rangeField.delegate = self
-        rangeField.setAccessibilityLabel(L10n.string("accessibility.page_range"))
-        borderCheckbox.toolTip = L10n.string("border.tooltip")
-        borderCheckbox.setAccessibilityLabel(L10n.string("border.show"))
-        cutGuidesCheckbox.toolTip = L10n.string("cut_guides.tooltip")
-        cutGuidesCheckbox.setAccessibilityLabel(L10n.string("cut_guides.show"))
+        rangeField.placeholderString = L10n.string("range.placeholder"); rangeField.delegate = self
+        rangeField.font = .systemFont(ofSize: 11); rangeField.setAccessibilityLabel(L10n.string("accessibility.page_range"))
         for (control, key) in [(paperPopup, "section.paper"), (arrangement, "section.arrangement"), (margins, "section.margin")] {
             control.setAccessibilityLabel(L10n.string(key))
         }
+        borderCheckbox.toolTip = L10n.string("border.tooltip"); cutGuidesCheckbox.toolTip = L10n.string("cut_guides.tooltip")
         for control in [paperPopup, orientation, arrangement, margins, borderCheckbox, cutGuidesCheckbox] as [NSControl] {
             control.target = self; control.action = #selector(settingsChanged)
         }
-        controls = [countPresets, countField, countStepper, paperPopup, orientation, arrangement, margins,
-                    borderCheckbox, cutGuidesCheckbox, rangeField]
-        restoreSettings()
-        syncCountPresets()
+        for box in [borderCheckbox, cutGuidesCheckbox] { box.font = .systemFont(ofSize: 12); box.controlSize = .small }
+        controls = [countPresets, countField, countStepper, paperPopup, orientation, arrangement, margins, borderCheckbox, cutGuidesCheckbox, rangeField]
+        restoreSettings(); syncCountPresets()
         layoutPresetPopup.target = self; layoutPresetPopup.action = #selector(choosePrintPreset)
+        layoutPresetPopup.controlSize = .small; layoutPresetPopup.font = .systemFont(ofSize: 11)
         layoutPresetPopup.setAccessibilityLabel(L10n.string("preset.label"))
         layoutPresetPopup.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
         syncPrintPresets()
-        let countGroup = section(L10n.string("label.pages_per_sheet"), countPresets)
-        countGroup.addArrangedSubview(countRow)
-        countRow.widthAnchor.constraint(equalTo: countGroup.widthAnchor).isActive = true
-
-        queueDisclosure.title = L10n.string("queue.title")
-        queueDisclosure.image = NSImage(systemSymbolName: "chevron.down", accessibilityDescription: nil)
-        queueDisclosure.imagePosition = .imageLeading
-        queueDisclosure.isBordered = false
-        queueDisclosure.font = .systemFont(ofSize: 13, weight: .semibold)
-        queueDisclosure.target = self; queueDisclosure.action = #selector(toggleQueue)
-        queueDisclosure.setAccessibilityLabel(L10n.string("queue.toggle"))
-        queueDisclosure.toolTip = L10n.string("queue.toggle")
-        queueDisclosure.heightAnchor.constraint(equalToConstant: 28).isActive = true
-        sourceQueueCount.font = .systemFont(ofSize: 11)
-        sourceQueueCount.textColor = .secondaryLabelColor
-        let header = NSStackView(views: [queueDisclosure, NSView(), sourceQueueCount])
-        sourceList.onRemove = { [weak self] index in self?.removeSource(at: index) }
-        sourceList.onMove = { [weak self] from, to in self?.moveSource(from: from, to: to) }
-        sourceList.onDropFiles = { [weak self] urls in self?.openDocuments(urls) }
-        sourceList.onChoosePages = { [weak self] index in self?.choosePages(forSourceAt: index) }
-        sourceQueueHeightConstraint = sourceList.heightAnchor.constraint(equalToConstant: 116)
-        sourceQueueHeightConstraint.isActive = true
-        queueHint.font = .systemFont(ofSize: 11)
-        queueHint.textColor = .secondaryLabelColor
-        let addFilesButton = button(L10n.string("toolbar.add"), #selector(openPanel))
-        addFilesButton.image = NSImage(systemSymbolName: "plus", accessibilityDescription: nil)
-        addFilesButton.imagePosition = .imageLeading
-        addFilesButton.setAccessibilityLabel(L10n.string("toolbar.add"))
-        addFilesButton.heightAnchor.constraint(equalToConstant: 28).isActive = true
-        sourceQueueBox.setViews([header, sourceList, queueHint, addFilesButton], in: .top)
-        sourceQueueBox.orientation = .vertical; sourceQueueBox.alignment = .leading; sourceQueueBox.spacing = 8
-        for view in [header, sourceList, queueHint, addFilesButton] { view.widthAnchor.constraint(equalTo: sourceQueueBox.widthAnchor).isActive = true }
-
-        let layout = group(L10n.string("group.layout"), views: [section(L10n.string("preset.label"), layoutPresetPopup), countGroup,
-            section(L10n.string("section.paper"), paperPopup),
-            section(L10n.string("section.orientation"), orientation), section(L10n.string("section.arrangement"), arrangement)])
-        moreSettingsButton.title = L10n.string("settings.more")
-        moreSettingsButton.imagePosition = .imageLeading; moreSettingsButton.isBordered = false
-        moreSettingsButton.font = .systemFont(ofSize: 13, weight: .semibold)
+        let countTitle = label(L10n.string("label.pages_per_sheet"), size: 12, weight: .regular)
+        let countGroup = verticalStack([countTitle, countPresets, countRow], spacing: 9)
+        let countHint = NSTextField(wrappingLabelWithString: L10n.string("workspace.count_hint"))
+        countHint.font = .systemFont(ofSize: 10); countHint.textColor = .secondaryLabelColor
+        let layout = verticalStack([countGroup, countHint, settingsRow("section.paper", paperPopup),
+            section(L10n.string("section.orientation"), orientation), settingsRow("section.arrangement", arrangement),
+            settingsRow("section.margin", margins)], spacing: 12)
+        let marksTitle = label(L10n.string("workspace.page_marks"), size: 10, weight: .semibold)
+        marksTitle.textColor = .secondaryLabelColor
+        let marks = verticalStack([marksTitle, borderCheckbox, cutGuidesCheckbox], spacing: 12)
+        moreSettingsButton.title = L10n.string("settings.more"); moreSettingsButton.imagePosition = .imageLeading
+        moreSettingsButton.isBordered = false; moreSettingsButton.font = .systemFont(ofSize: 11)
+        moreSettingsButton.alignment = .left
+        moreSettingsButton.contentTintColor = .secondaryLabelColor
         moreSettingsButton.target = self; moreSettingsButton.action = #selector(toggleMoreSettings)
         moreSettingsButton.setAccessibilityLabel(L10n.string("settings.more"))
-        moreSettingsButton.heightAnchor.constraint(equalToConstant: 28).isActive = true
+        let hint = NSTextField(wrappingLabelWithString: L10n.string("range.selected_hint"))
+        hint.font = .systemFont(ofSize: 10); hint.textColor = .secondaryLabelColor
         let combinedRange = section(L10n.string("section.page_range"), rangeField)
-        let combinedRangeHint = NSTextField(wrappingLabelWithString: L10n.string("range.selected_hint"))
-        combinedRangeHint.font = .systemFont(ofSize: 11)
-        combinedRangeHint.textColor = .secondaryLabelColor
-        combinedRange.addArrangedSubview(combinedRangeHint)
-        combinedRangeHint.widthAnchor.constraint(equalTo: combinedRange.widthAnchor).isActive = true
-        moreSettingsContent.setViews([section(L10n.string("section.margin"), margins), borderCheckbox, cutGuidesCheckbox,
-            combinedRange], in: .top)
-        moreSettingsContent.orientation = .vertical; moreSettingsContent.alignment = .leading; moreSettingsContent.spacing = 12
-        for view in moreSettingsContent.arrangedSubviews { view.widthAnchor.constraint(equalTo: moreSettingsContent.widthAnchor).isActive = true }
-        moreSettingsHint.font = .systemFont(ofSize: 11); moreSettingsHint.textColor = .secondaryLabelColor
-        moreSettingsHint.maximumNumberOfLines = 2; moreSettingsHint.lineBreakMode = .byTruncatingTail
-        let advanced = NSStackView(views: [moreSettingsButton, moreSettingsHint, moreSettingsContent])
-        advanced.orientation = .vertical; advanced.alignment = .leading; advanced.spacing = 8
-        moreSettingsContent.widthAnchor.constraint(equalTo: advanced.widthAnchor).isActive = true
-        moreSettingsHint.widthAnchor.constraint(equalTo: advanced.widthAnchor).isActive = true
-        let savedExpansion = preferences.object(forKey: "moreSettingsExpanded") as? Bool
-        setMoreSettingsExpanded(savedExpansion ?? (margins.indexOfSelectedItem != 0
-            || borderCheckbox.state == .on || cutGuidesCheckbox.state == .on))
-        let stack = NSStackView(views: [sourceQueueBox, separator(), layout, separator(), advanced])
-        stack.orientation = .vertical; stack.alignment = .leading; stack.spacing = 16
-        stack.distribution = .fill; stack.translatesAutoresizingMaskIntoConstraints = false
-        for view in stack.arrangedSubviews { view.widthAnchor.constraint(equalTo: stack.widthAnchor).isActive = true }
-        let scroll = NSScrollView()
-        scroll.drawsBackground = false; scroll.hasVerticalScroller = true; scroll.autohidesScrollers = true
-        scroll.borderType = .noBorder; scroll.translatesAutoresizingMaskIntoConstraints = false
-        let document = FlippedView()
-        document.translatesAutoresizingMaskIntoConstraints = false
-        scroll.documentView = document
-        document.addSubview(stack); sidebar.addSubview(scroll)
+        combinedRange.addArrangedSubview(hint); hint.widthAnchor.constraint(equalTo: combinedRange.widthAnchor).isActive = true
+        moreSettingsContent.setViews([combinedRange], in: .top)
+        moreSettingsContent.orientation = .vertical; moreSettingsContent.alignment = .leading
+        combinedRange.widthAnchor.constraint(equalTo: moreSettingsContent.widthAnchor).isActive = true
+        moreSettingsHint.font = .systemFont(ofSize: 10); moreSettingsHint.textColor = .secondaryLabelColor
+        moreSettingsHint.maximumNumberOfLines = 2
+        let advanced = verticalStack([moreSettingsButton, moreSettingsHint, moreSettingsContent], spacing: 8)
+        setMoreSettingsExpanded(preferences.bool(forKey: "moreSettingsExpanded") || !rangeField.stringValue.isEmpty)
+        let stack = verticalStack([section(L10n.string("preset.label"), layoutPresetPopup), separator(), layout, separator(), marks, separator(), advanced], spacing: 16)
+        let header = label(L10n.string("workspace.print_settings"), size: 12, weight: .semibold)
+        header.translatesAutoresizingMaskIntoConstraints = false
+        let scroll = NSScrollView(); scroll.drawsBackground = false
+        scroll.hasVerticalScroller = true; scroll.autohidesScrollers = true; scroll.borderType = .noBorder
+        scroll.translatesAutoresizingMaskIntoConstraints = false
+        let document = FlippedView(); document.translatesAutoresizingMaskIntoConstraints = false
+        scroll.documentView = document; document.addSubview(stack)
+        let paperTitle = label(L10n.string("workspace.paper_estimate"), size: 11, weight: .medium)
+        paperEstimate.font = .monospacedDigitSystemFont(ofSize: 12, weight: .medium)
+        let estimateRow = NSStackView(views: [paperTitle, NSView(), paperEstimate])
+        let paperHint = NSTextField(wrappingLabelWithString: L10n.string("workspace.paper_hint"))
+        paperHint.font = .systemFont(ofSize: 10); paperHint.textColor = .secondaryLabelColor
+        let footer = verticalStack([separator(), estimateRow, paperHint], spacing: 10)
+        for view in [header, scroll, footer] { inspector.addSubview(view) }
         NSLayoutConstraint.activate([
-            scroll.leadingAnchor.constraint(equalTo: sidebar.leadingAnchor), scroll.trailingAnchor.constraint(equalTo: sidebar.trailingAnchor),
-            scroll.topAnchor.constraint(equalTo: sidebar.topAnchor), scroll.bottomAnchor.constraint(equalTo: sidebar.bottomAnchor),
+            header.leadingAnchor.constraint(equalTo: inspector.leadingAnchor, constant: 18),
+            header.topAnchor.constraint(equalTo: inspector.topAnchor, constant: 22),
+            scroll.leadingAnchor.constraint(equalTo: inspector.leadingAnchor), scroll.trailingAnchor.constraint(equalTo: inspector.trailingAnchor),
+            scroll.topAnchor.constraint(equalTo: header.bottomAnchor, constant: 18),
+            scroll.bottomAnchor.constraint(equalTo: footer.topAnchor, constant: -14),
             document.widthAnchor.constraint(equalTo: scroll.contentView.widthAnchor),
-            stack.leadingAnchor.constraint(equalTo: document.leadingAnchor, constant: 16),
-            stack.trailingAnchor.constraint(equalTo: document.trailingAnchor, constant: -16),
-            stack.topAnchor.constraint(equalTo: document.topAnchor, constant: 16),
-            stack.bottomAnchor.constraint(equalTo: document.bottomAnchor, constant: -24)
+            stack.leadingAnchor.constraint(equalTo: document.leadingAnchor, constant: 18),
+            stack.trailingAnchor.constraint(equalTo: document.trailingAnchor, constant: -18),
+            stack.topAnchor.constraint(equalTo: document.topAnchor), stack.bottomAnchor.constraint(equalTo: document.bottomAnchor, constant: -12),
+            footer.leadingAnchor.constraint(equalTo: inspector.leadingAnchor, constant: 18),
+            footer.trailingAnchor.constraint(equalTo: inspector.trailingAnchor, constant: -18),
+            footer.bottomAnchor.constraint(equalTo: inspector.bottomAnchor, constant: -18)
         ])
     }
 
@@ -766,11 +832,15 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSTextFieldDelegate, N
         pdfView.displaysPageBreaks = true; pdfView.backgroundColor = .underPageBackgroundColor
         pdfView.translatesAutoresizingMaskIntoConstraints = false
         thumbnailView.pdfView = pdfView
-        thumbnailView.thumbnailSize = NSSize(width: 54, height: 74)
-        thumbnailView.backgroundColor = .windowBackgroundColor
+        thumbnailView.thumbnailSize = NSSize(width: 64, height: 88)
+        thumbnailView.maximumNumberOfColumns = 1
+        thumbnailView.backgroundColor = .underPageBackgroundColor
         thumbnailView.setAccessibilityLabel(L10n.string("preview.thumbnails"))
         thumbnailView.translatesAutoresizingMaskIntoConstraints = false
         previewContent.addSubview(pdfView); previewContent.addSubview(thumbnailView)
+        previewContext.font = .systemFont(ofSize: 10); previewContext.textColor = .secondaryLabelColor
+        previewContext.lineBreakMode = .byTruncatingMiddle; previewContext.translatesAutoresizingMaskIntoConstraints = false
+        previewContent.addSubview(previewContext)
         for (control, symbol, key, action) in [(previousButton, "chevron.left", "button.previous", #selector(previousPage)), (nextButton, "chevron.right", "button.next", #selector(nextPage))] {
             control.image = NSImage(systemSymbolName: symbol, accessibilityDescription: L10n.string(key))
             control.bezelStyle = .texturedRounded; control.target = self; control.action = action
@@ -778,9 +848,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSTextFieldDelegate, N
             control.widthAnchor.constraint(equalToConstant: 32).isActive = true
             control.heightAnchor.constraint(equalToConstant: 28).isActive = true
         }
-        pageLabel.font = .monospacedDigitSystemFont(ofSize: 12, weight: .medium)
+        pageLabel.font = .monospacedDigitSystemFont(ofSize: 11, weight: .regular)
         pageLabel.setContentHuggingPriority(.required, for: .horizontal)
-        summary.font = .systemFont(ofSize: 13, weight: .semibold)
+        summary.font = .systemFont(ofSize: 12, weight: .medium)
         detail.font = .systemFont(ofSize: 11); detail.textColor = .secondaryLabelColor
         status.font = .systemFont(ofSize: 11); status.textColor = .secondaryLabelColor
         status.lineBreakMode = .byTruncatingMiddle; status.isHidden = true
@@ -810,9 +880,13 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSTextFieldDelegate, N
         status.widthAnchor.constraint(equalTo: footer.widthAnchor).isActive = true
         previewContent.addSubview(footer)
         NSLayoutConstraint.activate([
-            thumbnailView.leadingAnchor.constraint(equalTo: previewContent.leadingAnchor), thumbnailView.widthAnchor.constraint(equalToConstant: 76),
-            thumbnailView.topAnchor.constraint(equalTo: previewContent.topAnchor), thumbnailView.bottomAnchor.constraint(equalTo: footer.topAnchor, constant: -12),
-            pdfView.topAnchor.constraint(equalTo: previewContent.topAnchor), pdfView.leadingAnchor.constraint(equalTo: thumbnailView.trailingAnchor),
+            thumbnailView.leadingAnchor.constraint(equalTo: previewContent.leadingAnchor), thumbnailView.widthAnchor.constraint(equalToConstant: 88),
+            previewContext.leadingAnchor.constraint(equalTo: previewContent.leadingAnchor, constant: 18),
+            previewContext.trailingAnchor.constraint(equalTo: previewContent.trailingAnchor, constant: -18),
+            previewContext.topAnchor.constraint(equalTo: previewContent.topAnchor, constant: 12),
+            previewContext.heightAnchor.constraint(equalToConstant: 16),
+            thumbnailView.topAnchor.constraint(equalTo: previewContent.topAnchor, constant: 40), thumbnailView.bottomAnchor.constraint(equalTo: footer.topAnchor, constant: -12),
+            pdfView.topAnchor.constraint(equalTo: thumbnailView.topAnchor), pdfView.leadingAnchor.constraint(equalTo: thumbnailView.trailingAnchor),
             pdfView.trailingAnchor.constraint(equalTo: previewContent.trailingAnchor), pdfView.bottomAnchor.constraint(equalTo: thumbnailView.bottomAnchor),
             footer.leadingAnchor.constraint(equalTo: previewContent.leadingAnchor, constant: 16),
             footer.trailingAnchor.constraint(equalTo: previewContent.trailingAnchor, constant: -16),
@@ -844,7 +918,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSTextFieldDelegate, N
         icon.contentTintColor = .controlAccentColor
         icon.symbolConfiguration = NSImage.SymbolConfiguration(pointSize: 48, weight: .light)
         let emptyTitle = NSTextField(wrappingLabelWithString: L10n.string("empty.title"))
-        emptyTitle.font = .systemFont(ofSize: 26, weight: .semibold); emptyTitle.alignment = .center
+        emptyTitle.font = .systemFont(ofSize: 23, weight: .semibold); emptyTitle.alignment = .center
         let emptyText = NSTextField(wrappingLabelWithString: L10n.string("empty.text"))
         emptyText.font = .systemFont(ofSize: 13); emptyText.textColor = .secondaryLabelColor; emptyText.alignment = .center
         emptyView.setViews([icon, emptyTitle, emptyText, button(L10n.string("toolbar.add"), #selector(openPanel))], in: .center)
@@ -933,12 +1007,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSTextFieldDelegate, N
     func refreshSourceQueue(selectedIndex: Int? = nil) {
         let totalPages = sourceItems.reduce(0) { $0 + $1.pageCount }
         let selectedPages = sourceItems.reduce(0) { $0 + $1.includedPageCount }
-        sourceQueueCount.stringValue = selectedPages == totalPages
-            ? L10n.format("queue.summary", sourceItems.count, totalPages)
-            : L10n.format("queue.selection_summary", sourceItems.count, selectedPages, totalPages)
-        sourceQueueHeightConstraint.constant = min(max(CGFloat(sourceItems.count) * 56 + 16, 72), 212)
+        sourceQueueCount.stringValue = L10n.format("queue.count", sourceItems.count)
+        queueSummary.stringValue = L10n.format("workspace.selected_summary", selectedPages, totalPages)
         sourceList.update(sources: sourceItems, selectedIndex: selectedIndex)
-        queueHint.isHidden = queueCollapsed || sourceItems.count < 2
+        queueHint.isHidden = sourceItems.count < 2
     }
 
     func makePreviewDocument(sources: [PDFSource]) throws -> PDFDocument {
@@ -993,7 +1065,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSTextFieldDelegate, N
                 sourceDetail.stringValue = L10n.string("source.local_only")
                 sourceTitle.toolTip = nil
                 displayedPreview = nil; savedPreviewPage = 0; savedPreviewScale = nil
-                sidebarItem.isCollapsed = true
                 pendingRender?.cancel()
                 pdfView.document = nil
                 pageLabel.stringValue = ""
@@ -1183,6 +1254,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSTextFieldDelegate, N
         updatePageLabel()
         renderingLabel.toolTip = renderingLabel.stringValue
         detail.toolTip = outputDocument == nil ? detail.stringValue : detail.toolTip
+        paperEstimate.stringValue = outputDocument.map { L10n.format("workspace.sheets", $0.pageCount) } ?? "—"
+        if mode.selectedSegment == 1 { previewContext.stringValue = L10n.string("workspace.preview_hint") }
+        else if sourceItems.indices.contains(sourceList.selectedIndex) { previewContext.stringValue = sourceItems[sourceList.selectedIndex].name }
         window?.toolbar?.validateVisibleItems()
     }
 
@@ -1204,6 +1278,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSTextFieldDelegate, N
             pdfView.displayMode = .singlePageContinuous
             pdfView.document = sourceDocument
             pdfView.autoScales = true
+            sourceSelectionChanged(sourceList.selectedIndex)
         } else if let preview = outputDocument ?? displayedPreview { installPreview(preview) }
         else { pdfView.document = nil }
         updateAvailability()

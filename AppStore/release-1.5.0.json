@@ -1,0 +1,50 @@
+{
+  "appId": "6810637581",
+  "platform": "macOS",
+  "version": "1.5.0",
+  "build": "22",
+  "bundleId": "com.songningning.pdfpinprint",
+  "releaseMode": "automaticAfterApproval",
+  "rollout": "immediateAllUsers",
+  "status": "waitingForReview",
+  "statusAtSubmission": "等待审核",
+  "submittedAtLocal": "2026-11-10 13:28 Asia/Shanghai",
+  "submissionId": "652321f9-e404-435a-a61b-153402600858",
+  "archive": "/Users/shaobo/Documents/Codex/2026-09-10/p-d-f/work/archives.noindex/PDFPinPrint-1.5.0-build22.xcarchive",
+  "uploadOptions": "Config/AppStoreUploadOptions-1.5.0.plist",
+  "uploadConfirmedAtUTC": "2026-11-10T04:10:24Z",
+  "delivery": "xcodebuild direct upload; Upload succeeded and EXPORT SUCCEEDED",
+  "localizations": {
+    "zh-Hans": {
+      "name": "PDF合并打印 - PDF阅读器",
+      "subtitle": "多份文件选页拼版打印",
+      "metadataFile": "AppStore/metadata-zh-Hans.md",
+      "keywords": "PDF,图片,Word,文档,转换,三页一张,五页一张,多页,批量,布局,预览,A4,A3,Letter"
+    },
+    "en-US": {
+      "name": "PDF Merge & Print - Reader",
+      "subtitle": "Merge Files, Pick Pages, Print",
+      "metadataFile": "AppStore/metadata-en-US.md",
+      "keywords": "PDF,image,word,document,convert,3-up,5-up,n-up,batch,impose,preview,export,offline,A4,A3,Letter"
+    }
+  },
+  "screenshotOrder": [
+    "01-hero-angled.png",
+    "02-page-selection-flat.png",
+    "03-n-up-flat.png",
+    "04-merge-queue-flat.png",
+    "05-preview-print-flat.png"
+  ],
+  "reviewSubmissionConfirmed": true,
+  "submissionEvidence": {
+    "localizationsSaved": ["zh-Hans", "en-US"],
+    "reviewNotesVersion": "1.5.0 (22)",
+    "automaticReleaseSelected": true,
+    "immediateFullRolloutSelected": true,
+    "buildSelected": "1.5.0 (22)",
+    "confirmation": "已提交 1 个项目",
+    "reviewStatus": "等待审核",
+    "confirmationScreenshot": "/tmp/pdf150-submitted-confirmation.png",
+    "statusScreenshot": "/tmp/pdf150-waiting-for-review.png"
+  }
+}
